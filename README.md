@@ -1,3 +1,5 @@
 #### Python 3 compatibility
-* Python Debug support
-- Python Debugger
+* Build
+```
+pyinstaller --onefile --windowed activity_monitor.py
+```
