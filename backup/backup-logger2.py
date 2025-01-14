@@ -1,15 +1,15 @@
-import os
 import requests
-import time
 import json
 import sys
 import platform
-from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QLineEdit, QPushButton, QDialog
 from pynput import keyboard, mouse
+from pynput.mouse import Listener as MouseListener
 from threading import Thread
+import os
 from datetime import datetime
+from threading import Thread
 
 class EmailDialog(QDialog):
     def __init__(self):
@@ -20,7 +20,7 @@ class EmailDialog(QDialog):
 
     def initUI(self):
         layout = QVBoxLayout()
-
+        
         self.email_label = QLabel("Enter your email:")
         layout.addWidget(self.email_label)
 
@@ -35,41 +35,16 @@ class EmailDialog(QDialog):
         self.setLayout(layout)
 
     def confirm_email(self):
-        email = self.email_input.text()
-
-        if email:
-            response = self.check_email_api(email)
-            
-            if response.get('status') == 'valid':
-                self.accept()
-            else:
-                self.email_label.setText("Email belum terdaftar di database PM.")
+        email = self.email_input.text().strip()
+        if email and "@" in email:  # Periksa email valid
+            self.accept()
         else:
             self.email_label.setText("Please enter a valid email.")
 
-    def check_email_api(self, email):
-        """Check email validity via API"""
-        try:
-            response = requests.get(f'http://localhost:9091/api/check-email?email={email}')
-            if response.status_code == 200:
-                response_data = response.json()
-                print("API Response:", response_data)
-                if response_data.get('status') == True:
-                    return {'status': 'valid'}
-                else:
-                    return {'status': 'invalid', 'message': response_data.get('message', 'Email is invalid')}
-            else:
-                print(f"Error checking email: {response.status_code}")
-        except Exception as e:
-            print(f"Error during email check: {e}")
-        return {'status': 'invalid', 'message': 'Error during email check'}
-    
 class ActivityMonitorApp(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.setWindowTitle("Activity Usage | PM Tokoweb")
-        self.setWindowIcon(QIcon('assets/fav-1-1.webp'))
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_usage)
         self.timer.start(1000)
@@ -80,15 +55,9 @@ class ActivityMonitorApp(QWidget):
         self.total_time_seconds = 0
         self.user_email = ""
         self.work_start_time = None
-        self.data_file = "data/activity_data.json" 
+        self.data_file = "activity_data.json" 
+        self.show_email_dialog()
         self.elapsed_time = 0
-        self.start_time = 0
-        self.keyboard_usage = 0
-        self.mouse_usage = 0
-
-        # Show email dialog and check if user input is valid
-        if not self.show_email_dialog():
-            sys.exit(0)  # If email is not provided, exit the program
 
     def initUI(self):
         main_layout = QVBoxLayout()
@@ -118,24 +87,20 @@ class ActivityMonitorApp(QWidget):
         email_dialog = EmailDialog()
         if email_dialog.exec_() == QDialog.Accepted:
             self.user_email = email_dialog.email_input.text()
-            if self.user_email:  # Only proceed if a valid email is entered
-                print(f"User email set to: {self.user_email}")
-                self.email_label.setText(f"User Email: {self.user_email}")  # Update the email label
-                self.start_tracking()  # Start monitoring once email is confirmed
-                return True
-        return False  # Return False if the dialog was closed or email was invalid
+            print(f"User email set to: {self.user_email}")
+            self.email_label.setText(f"User Email: {self.user_email}")  # Update the email label
+            self.start_tracking()  # Start monitoring once email is confirmed
 
     def start_tracking(self):
         keyboard_listener = keyboard.Listener(on_press=self.on_keyboard_event)
         keyboard_thread = Thread(target=keyboard_listener.start)
+        keyboard_thread.daemon = True
         keyboard_thread.start()
 
-        mouse_listener = mouse.Listener(on_click=self.on_mouse_event, on_move=self.on_mouse_move)
+        mouse_listener = MouseListener(on_click=self.on_mouse_event, on_move=self.on_mouse_move)
         mouse_thread = Thread(target=mouse_listener.start)
+        mouse_thread.daemon = True
         mouse_thread.start()
-        
-        keyboard_thread.join()
-        mouse_thread.join()
 
     def on_keyboard_event(self, key):
         self.total_keyboard_events += 1
@@ -143,10 +108,11 @@ class ActivityMonitorApp(QWidget):
     def on_mouse_event(self, x, y, button, pressed):
         if pressed:
             self.total_mouse_events += 1
-            print(f"Mouse clicked at ({x}, {y}) with button {button}")
+            print(f"Mouse clicked. Total mouse events: {self.total_mouse_events}")
 
     def on_mouse_move(self, x, y):
         self.total_mouse_events += 1
+        print(f"Mouse moved. Total mouse events: {self.total_mouse_events}")
 
     def get_active_window(self):
         """Dapatkan nama jendela aplikasi aktif"""
@@ -165,7 +131,7 @@ class ActivityMonitorApp(QWidget):
         except Exception as e:
             print(f"Error detecting active window: {e}")
         return "Unknown"
-
+    
     def update_usage(self):
         active_window = self.get_active_window()
         if active_window and active_window != self.current_active_window:
@@ -190,12 +156,14 @@ class ActivityMonitorApp(QWidget):
         elapsed_time_ratio = self.total_time_seconds / total_work_seconds
         self.elapsed_time = elapsed_time_ratio
 
-        self.keyboard_usage = (self.total_keyboard_events / total_work_seconds) * 100 * elapsed_time_ratio
-        self.mouse_usage = (self.total_mouse_events / total_work_seconds) * 100 * elapsed_time_ratio
+        keyboard_usage = (self.total_keyboard_events / total_work_seconds) * 100 * elapsed_time_ratio
+        mouse_usage = (self.total_mouse_events / total_work_seconds) * 100 * elapsed_time_ratio
 
-        self.activity_label.setText(f"Keyboard Usage: {self.keyboard_usage:.2f}%, Mouse Usage: {self.mouse_usage:.2f}%")
+        self.activity_label.setText(f"Keyboard Usage: {keyboard_usage:.2f}%, Mouse Usage: {mouse_usage:.2f}%")
 
+        # Save data to JSON file
         self.save_data_to_json()
+
 
     def format_time(self, total_seconds):
         hours = total_seconds // 3600
@@ -204,57 +172,66 @@ class ActivityMonitorApp(QWidget):
         return int(hours), int(minutes), int(seconds)
 
     def save_data_to_json(self):
-        """Save the usage data to a JSON file."""
+        """Simpan data ke file JSON."""
+        total_work_time_seconds = 8 * 3600
+        elapsed_time = min(self.total_time_seconds, total_work_time_seconds)
+
+        keyboard_usage = self.total_keyboard_events / total_work_time_seconds if elapsed_time > 0 else 0
+        mouse_usage = self.total_mouse_events / total_work_time_seconds if elapsed_time > 0 else 0
+
         data = {
             'email': self.user_email,
             'app_usage_time': self.app_usage_time,
-            'keyboard_usage': self.keyboard_usage,
-            'mouse_usage': self.mouse_usage,
+            'keyboard_usage': keyboard_usage,
+            'mouse_usage': mouse_usage,
             'created_at': str(datetime.now())
         }
 
         with open(self.data_file, 'w') as json_file:
             json.dump(data, json_file)
 
-    def get_elapsed_time_ratio(self, total_work_seconds):
-        """Menghitung rasio waktu yang telah berlalu."""
-        elapsed_time = time.time() - self.start_time
-        return elapsed_time / total_work_seconds if total_work_seconds > 0 else 0
-    
     def closeEvent(self, event):
         """Called when the application is closed."""
-        total_work_seconds = 3600
-        elapsed_time_ratio = self.get_elapsed_time_ratio(total_work_seconds)
-        self.send_data_to_db(total_work_seconds, elapsed_time_ratio)
+        # Send data to database before closing
+        self.send_data_to_db()
         event.accept()
 
-    def send_data_to_db(self, total_work_seconds, elapsed_time_ratio):
-        """Send data stored in JSON file to the database."""
+    def send_data_to_db(self):
+        """Kirim data ke database."""
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as json_file:
                 data = json.load(json_file)
 
+            # Periksa apakah semua field di payload ada dan valid
+            if not data.get('email') or not data.get('app_usage_time'):
+                print("Error: Data tidak lengkap, tidak bisa mengirim ke database.")
+                return
+
+            data['keyboard_usage'] = round(data['keyboard_usage'] * 100, 2)
+            data['mouse_usage'] = round(data['mouse_usage'] * 100, 2)
+
             payload = {
                 'email': data['email'],
-                'app_usage_time': json.dumps(data['app_usage_time']),
-                'keyboard_usage': self.keyboard_usage,
-                'mouse_usage': self.mouse_usage,
+                'app_usage_time': json.dumps(data['app_usage_time']),  # JSON-stringify dictionary
+                'keyboard_usage': data['keyboard_usage'],
+                'mouse_usage': data['mouse_usage'],
                 'created_at': data['created_at']
             }
 
-            url = 'http://localhost:9091/api/send-activity'
+            url = 'http://localhost:9091/send-activity'
             try:
-                response = requests.post(url, data=payload)
+                response = requests.post(url, json=payload)
                 if response.status_code == 200:
-                    print("Data berhasil dikirim ke database")
+                    print("Data berhasil dikirim ke database:", payload)
                 else:
-                    print(f"Terjadi kesalahan saat mengirim data: {response.status_code}")
+                    print(f"Terjadi kesalahan saat mengirim data: {response.status_code}, Response: {response.text}")
             except Exception as e:
                 print(f"Error saat mengirim data ke API: {e}")
+
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ActivityMonitorApp()
     window.show()
     sys.exit(app.exec_())
-
