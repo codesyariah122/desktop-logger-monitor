@@ -10,7 +10,7 @@ import json
 import sys
 import platform
 from PySide2.QtGui import QIcon, QPixmap
-from PySide2.QtCore import QTimer, QObject
+from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
     QTableWidget, QTableWidgetItem, QLineEdit,
@@ -219,10 +219,8 @@ class ActivityMonitorApp(QWidget):
                 image_url = f'http://localhost/pm-local/files/profile_images/{image_path}'
                 print(f"Trying to load image from: {image_url}")
                 
-                # Download the image using requests
                 response = requests.get(image_url)
                 if response.status_code == 200:
-                    # Convert the response content into a QPixmap
                     image_data = io.BytesIO(response.content)
                     pixmap = QPixmap()
                     pixmap.loadFromData(image_data.read())
