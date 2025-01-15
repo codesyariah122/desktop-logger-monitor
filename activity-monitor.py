@@ -10,6 +10,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QLineEdit, QPushButton, QDialog, QHBoxLayout
 # from pynput import keyboard, mouse
+from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QAction
 import pyautogui
 import keyboard
 from threading import Thread
@@ -115,10 +116,31 @@ class ActivityMonitorApp(QWidget):
         self.mouse_usage = 0
         self.timer.start(100)
 
-        # Show email dialog and check if user input is valid
         if not self.show_email_dialog():
-            sys.exit(0)  # If email is not provided, exit the program
+            sys.exit(0)
+        
+        self.setup_tray_icon()
+        
+    def setup_tray_icon(self):
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon(resource_path("assets/fav-1-1.webp")))
+        self.tray_icon.setVisible(True)
 
+        tray_menu = QMenu()
+
+        show_action = QAction("Show Application", self)
+        show_action.triggered.connect(self.show)
+        tray_menu.addAction(show_action)
+
+        hide_action = QAction("Hide Application", self)
+        hide_action.triggered.connect(self.hide)
+        tray_menu.addAction(hide_action)
+
+        quit_action = QAction("Quit", self)
+        quit_action.triggered.connect(self.quit_application)
+        tray_menu.addAction(quit_action)
+
+        self.tray_icon.setContextMenu(tray_menu)
     def initUI(self):
         main_layout = QVBoxLayout()
 
