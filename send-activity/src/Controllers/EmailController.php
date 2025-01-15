@@ -1,27 +1,29 @@
 <?php
 
+/**
+ * @author Puji Ermanto <pujiermanto@gmail.com>
+ * @return _
+ */
+
 namespace App\Controllers;
 
-use App\Services\LogService;
+use App\Services\EmailService;
 
 class EmailController
 {
-    private $logService;
+    private $emailService;
 
     public function __construct()
     {
-        $this->logService = new LogService();
+        $this->emailService = new EmailService();
     }
 
     public function checkEmail()
     {
-        // Ambil email dari parameter GET
         $email = $_GET['email'] ?? null;
 
-        // Cek apakah email diberikan
         if ($email) {
-            // Periksa apakah email ada di database kedua
-            $emailExists = $this->logService->checkEmailExistsInSecondDatabase($email);
+            $emailExists = $this->emailService->checkEmailExistsInSecondDatabase($email);
 
             if ($emailExists) {
                 $response = [
@@ -41,7 +43,36 @@ class EmailController
             ];
         }
 
-        // Kirimkan respons dalam format JSON
         echo json_encode($response, JSON_PRETTY_PRINT);
+    }
+
+    public function handleUserData()
+    {
+        $email = $_GET['email'] ?? null;
+        if ($email) {
+            $userData = $this->emailService->getUserDataByEmail($email);
+
+            if ($userData) {
+                if (isset($userData['image'])) {
+                    $imageData = unserialize($userData['image']);
+                    if (isset($imageData['file_name'])) {
+                        $userData['image'] = $imageData['file_name']; // Ambil nama file
+                    }
+                }
+
+                $response = [
+                    'status' => 'success',
+                    'message' => "User data with email {$email} is existing",
+                    'data' => $userData,
+                ];
+            } else {
+                $response = [
+                    'status' => 'error',
+                    'message' => 'User data not found.',
+                ];
+            }
+
+            echo json_encode($response, JSON_PRETTY_PRINT);
+        }
     }
 }

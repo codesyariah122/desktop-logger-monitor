@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @author Puji Ermanto <pujiermanto@gmail.com>
+ * @return _
+ */
+
 namespace App;
 
 use PDO;

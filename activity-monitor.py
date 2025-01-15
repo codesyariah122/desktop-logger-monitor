@@ -1,23 +1,29 @@
+# @author Puji Ermanto <pujiermanto@gmail>
+# @return package
+
 import os
-import logging
+import io
+import platform
 import requests
 import time
 import json
 import sys
 import platform
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QLineEdit, QPushButton, QDialog, QHBoxLayout
+from PySide2.QtGui import QIcon, QPixmap
+from PySide2.QtCore import QTimer, QObject
+from PySide2.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QLabel,
+    QTableWidget, QTableWidgetItem, QLineEdit,
+    QPushButton, QDialog, QMenu, QAction, QSystemTrayIcon
+)
+
+from PySide2.QtCore import Qt
 # from pynput import keyboard, mouse
-from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QAction
+from PySide2.QtWidgets import QSystemTrayIcon,  QMenu, QAction
 import pyautogui
 import keyboard
 from threading import Thread
 from datetime import datetime
-
-# logging.basicConfig(level=logging.DEBUG, filename="app_debug.log")
-# logging.debug("Debugging log started")
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -37,38 +43,37 @@ class EmailDialog(QDialog):
     def initUI(self):
         layout = QVBoxLayout()
 
-        self.email_label = QLabel("Enter email on active email PM Tokoweb :")
-        layout.addWidget(self.email_label)
-
-        email_layout = QVBoxLayout()
-
         self.logo_label = QLabel(self)
         self.logo_pixmap = QPixmap(resource_path("assets/logo-master.png"))
-        scaled_pixmap = self.logo_pixmap.scaled(100, 60)
+        scaled_pixmap = self.logo_pixmap.scaled(200, 100)
         self.logo_label.setPixmap(scaled_pixmap)
-        self.logo_label.setFixedSize(100, 60)
-        email_layout.addWidget(self.logo_label)
+        self.logo_label.setFixedSize(200, 100)
+        layout.addWidget(self.logo_label)
+
+        self.heading_label = QLabel("Activity Monitor | PM Tokoweb", self)
+        self.heading_label.setAlignment(Qt.AlignCenter)
+        self.heading_label.setStyleSheet("font-size: 18px; margin-bottom: 20px;")
+        layout.addWidget(self.heading_label)
+
+        self.email_label = QLabel("Enter your active email on PM Tokoweb :")
+        layout.addWidget(self.email_label)
 
         self.email_input = QLineEdit(self)
         self.email_input.setPlaceholderText("Email")
         self.email_input.setMinimumHeight(40)
-        email_layout.addWidget(self.email_input)
-
-        layout.addLayout(email_layout)
+        layout.addWidget(self.email_input)
 
         self.confirm_button = QPushButton("Confirm", self)
         self.confirm_button.clicked.connect(self.confirm_email)
         layout.addWidget(self.confirm_button)
 
         self.setLayout(layout)
-
     def confirm_email(self):
         email = self.email_input.text()
-
         if email:
             response = self.check_email_api(email)
-            
             if response.get('status') == 'valid':
+                self.user_email = email
                 self.accept()
             else:
                 self.email_label.setText("Email belum terdaftar di database PM.")
@@ -95,9 +100,11 @@ class EmailDialog(QDialog):
 class ActivityMonitorApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.setup_tray_icon()
+        self.hide()  
         self.initUI()
         self.setWindowTitle("Activity Usage | PM Tokoweb")
-        self.setWindowIcon(QIcon(resource_path("assets/fav-1-1.webp")))
+        self.setWindowIcon(QIcon(resource_path("assets/fav-1-1.png")))
         self.last_mouse_position = None
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_usage)
@@ -118,29 +125,40 @@ class ActivityMonitorApp(QWidget):
 
         if not self.show_email_dialog():
             sys.exit(0)
-        
-        self.setup_tray_icon()
-        
     def setup_tray_icon(self):
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon(resource_path("assets/fav-1-1.webp")))
-        self.tray_icon.setVisible(True)
-
+        icon_path = resource_path("assets/fav-1-1.webp")
+        icon = QIcon(icon_path)
+        
+        self.tray_icon = QSystemTrayIcon(icon, self)
+        self.tray_icon.setToolTip("Activity Monitor Running")
+        
         tray_menu = QMenu()
-
+        
         show_action = QAction("Show Application", self)
         show_action.triggered.connect(self.show)
         tray_menu.addAction(show_action)
-
+        
         hide_action = QAction("Hide Application", self)
         hide_action.triggered.connect(self.hide)
         tray_menu.addAction(hide_action)
-
+        
         quit_action = QAction("Quit", self)
         quit_action.triggered.connect(self.quit_application)
         tray_menu.addAction(quit_action)
-
+        
         self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
+        
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+
+        
+    def on_tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.show()
+
+    def quit_application(self):
+        QApplication.quit()
+        
     def initUI(self):
         main_layout = QVBoxLayout()
 
@@ -154,7 +172,7 @@ class ActivityMonitorApp(QWidget):
         self.app_table.horizontalHeader().setStretchLastSection(True)
         main_layout.addWidget(self.app_table)
 
-        self.activity_label = QLabel("Keyboard Usage: 0%, Mouse Usage: 0%")
+        self.activity_label = QLabel("Keyboard Usage: 0% | Mouse Usage: 0%")
         self.activity_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
         main_layout.addWidget(self.activity_label)
 
@@ -164,69 +182,91 @@ class ActivityMonitorApp(QWidget):
 
         self.setLayout(main_layout)
 
+    def get_user_data_from_api(self):
+        """Get user data from API using the provided email."""
+        try:
+            response = requests.get(f'http://localhost:9091/api/user-data?email={self.user_email}')
+            if response.status_code == 200:
+                user_data = response.json()             
+                self.display_user_data(user_data)
+            else:
+                print(f"Error fetching user data: {response.status_code}")
+        except Exception as e:
+            print(f"Error during fetching user data: {e}")
+
+    def display_user_data(self, user_data):
+        """Display fetched user data in the UI."""        
+        user_info = user_data.get('data', {})
+        if not user_info:
+            print("User info is missing from the API response.")
+            return
+
+        first_name = user_info.get('first_name', 'Unknown')
+        last_name = user_info.get('last_name', 'Unknown')
+        self.user_name_label = QLabel(f"Name: {first_name} {last_name}", self)
+        self.user_name_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        self.layout().addWidget(self.user_name_label)
+
+        job_title = user_info.get('job_title', 'Not specified')
+        self.job_title_label = QLabel(f"Job Title: {job_title}", self)
+        self.job_title_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        self.layout().addWidget(self.job_title_label)
+
+        image_path = user_info.get('image')
+        
+        if image_path:
+            try:
+                image_url = f'http://localhost/pm-local/files/profile_images/{image_path}'
+                print(f"Trying to load image from: {image_url}")
+                
+                # Download the image using requests
+                response = requests.get(image_url)
+                if response.status_code == 200:
+                    # Convert the response content into a QPixmap
+                    image_data = io.BytesIO(response.content)
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(image_data.read())
+                    
+                    if not pixmap.isNull():  # Ensure the image is valid
+                        self.user_image_label = QLabel(self)
+                        self.user_image_label.setPixmap(pixmap)
+                        self.user_image_label.setScaledContents(True)
+                        self.user_image_label.setFixedSize(100, 100)
+                        self.layout().addWidget(self.user_image_label)
+                    else:
+                        print(f"Failed to load image from response.")
+                else:
+                    print(f"Failed to download image, status code: {response.status_code}")
+            except Exception as e:
+                print(f"Error loading image: {e}")
+        else:
+            print("No image found in user data.")
+            
     def show_email_dialog(self):
         """Show the email input dialog before starting activity monitoring."""
         email_dialog = EmailDialog()
         if email_dialog.exec_() == QDialog.Accepted:
             self.user_email = email_dialog.email_input.text()
-            if self.user_email:  # Only proceed if a valid email is entered
+            if self.user_email:
                 print(f"User email set to: {self.user_email}")
-                self.email_label.setText(f"User Email: {self.user_email}")  # Update the email label
-                self.start_tracking()  # Start monitoring once email is confirmed
+                self.email_label.setText(f"User Email: {self.user_email}")
+                self.get_user_data_from_api()
+                self.start_tracking()
                 return True
-        return False  # Return False if the dialog was closed or email was invalid
-
+        return False
     def start_tracking(self):
-        # keyboard_listener = keyboard.Listener(on_press=self.on_keyboard_event)
-        # keyboard_thread = Thread(target=keyboard_listener.start)
-        # keyboard_thread.start()
-
-        # mouse_listener = mouse.Listener(on_click=self.on_mouse_event, on_move=self.on_mouse_move)
-        # mouse_thread = Thread(target=mouse_listener.start)
-        # mouse_thread.start()
-        
-        # keyboard_thread.join()
-        # mouse_thread.join()
-        # keyboard_listener = keyboard.Listener(on_press=self.on_keyboard_event)
-        # keyboard_listener.start() 
-
-        # mouse_listener = mouse.Listener(on_click=self.on_mouse_event, on_move=self.on_mouse_move)
-        # mouse_listener.start()
-        
-        # New rules code
         keyboard_thread = Thread(target=self.monitor_keyboard_events)
         keyboard_thread.start()
-        # Mouse listener tetap menggunakan pynput
         mouse_thread = Thread(target=self.monitor_mouse_events)
         mouse_thread.start()
 
-    # def on_keyboard_event(self, key):
-    #     self.total_keyboard_events += 1
     def monitor_keyboard_events(self):
         while True:
             event = keyboard.read_event()
             if event.event_type == "down":  # Key press event
                 self.total_keyboard_events += 1
                 print(f"Key pressed: {event.name}")
-                
-    # def on_keyboard_event(key):
-    #     try:
-    #         print(f"Key pressed: {key.char}")
-    #     except AttributeError:
-    #         print(f"Special key pressed: {key}")
-    # keyboard_listener = keyboard.Listener(on_press=on_keyboard_event)
-    # keyboard_listener.start()
-
-    # def on_mouse_event(self, x, y, button, pressed):  
-    #     if pressed:
-    #         self.total_mouse_events += 1
-    #         print(f"Mouse clicked at ({x}, {y}) with button {button}")
-    # def on_mouse_event(x, y, button, pressed):
-    #     if pressed:
-    #         print(f"Mouse clicked at ({x}, {y}) with {button}")
-    # mouse_listener = mouse.Listener(on_click=on_mouse_event)
-    # mouse_listener.start()
-    
+   
     def monitor_mouse_events(self):
         while True:
             current_position = pyautogui.position()
@@ -284,7 +324,7 @@ class ActivityMonitorApp(QWidget):
         self.keyboard_usage = (self.total_keyboard_events / total_work_seconds) * 100 * elapsed_time_ratio
         self.mouse_usage = (self.total_mouse_events / total_work_seconds) * 100 * elapsed_time_ratio
 
-        self.activity_label.setText(f"Keyboard Usage: {self.keyboard_usage:.2f}%, Mouse Usage: {self.mouse_usage:.2f}%")
+        self.activity_label.setText(f"Keyboard Usage: {self.keyboard_usage:.2f}% | Mouse Usage: {self.mouse_usage:.2f}%")
 
         self.save_data_to_json()
 
@@ -293,35 +333,65 @@ class ActivityMonitorApp(QWidget):
         minutes = (total_seconds % 3600) // 60
         seconds = total_seconds % 60
         return int(hours), int(minutes), int(seconds)
+    
+    def get_device_name(self):
+        system_info = platform.system()
+        node_name = platform.node()
+        machine_type = platform.machine()
+        processor_type = platform.processor()
+
+        return f"Device: {node_name}, System: {system_info}, Processor: {processor_type}, Architecture: {machine_type}"
 
     def save_data_to_json(self):
         """Save the usage data to a JSON file."""
+        device_name = self.get_device_name() 
+        
         data = {
             'email': self.user_email,
             'app_usage_time': self.app_usage_time,
             'keyboard_usage': self.keyboard_usage,
             'mouse_usage': self.mouse_usage,
+            "device": device_name,
             'created_at': str(datetime.now())
         }
 
-        with open(self.data_file, 'w') as json_file:
-            json.dump(data, json_file)
+        try:
+            with open(self.data_file, 'w') as json_file:
+                json.dump(data, json_file)
+        except Exception as e:
+            print(f"Error saving data to JSON: {e}")
 
     def get_elapsed_time_ratio(self, total_work_seconds):
         """Menghitung rasio waktu yang telah berlalu."""
         elapsed_time = time.time() - self.start_time
         return elapsed_time / total_work_seconds if total_work_seconds > 0 else 0
     
-    def closeEvent(self, event):
-        """Called when the application is closed."""
+    def quit_application(self):
+        """Handle the quit action, send data before quitting."""
         total_work_seconds = 3600
         elapsed_time_ratio = self.get_elapsed_time_ratio(total_work_seconds)
         self.send_data_to_db(total_work_seconds, elapsed_time_ratio)
-        event.accept()
+        
+        self.tray_icon.hide()
+        
+        QApplication.quit()
+        sys.exit() 
+    
+    def closeEvent(self, event):
+        """Override closeEvent to minimize the app to the system tray instead of exiting."""
+        event.ignore()
+        self.hide()
+        self.tray_icon.showMessage(
+            "Minimized to Tray",
+            "The application is still running in the system tray. Double-click the icon to restore it.",
+            QSystemTrayIcon.Information,
+            3000
+        )
 
     def send_data_to_db(self, total_work_seconds, elapsed_time_ratio):
         """Send data stored in JSON file to the database."""
         if os.path.exists(self.data_file):
+            
             with open(self.data_file, 'r') as json_file:
                 data = json.load(json_file)
 
@@ -330,6 +400,7 @@ class ActivityMonitorApp(QWidget):
                 'app_usage_time': json.dumps(data['app_usage_time']),
                 'keyboard_usage': data['keyboard_usage'],
                 'mouse_usage': data['mouse_usage'],
+                'device': data['device'],
                 'created_at': data['created_at']
             }
 

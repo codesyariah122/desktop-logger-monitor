@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @author Puji Ermanto <pujiermanto@gmail.com>
+ * @return _
+ */
+
 namespace App\Services;
 
 use App\Database;
@@ -18,8 +23,8 @@ class ActivityService
     public function processActivity($data)
     {
         try {
-            $query = "INSERT INTO log (email, app_usage_time, keyboard_usage, mouse_usage, created_at) 
-                  VALUES (:email, :app_usage_time, :keyboard_usage, :mouse_usage, :created_at)";
+            $query = "INSERT INTO log (email, app_usage_time, keyboard_usage, mouse_usage, device, created_at) 
+                  VALUES (:email, :app_usage_time, :keyboard_usage, :mouse_usage, :device, :created_at)";
 
             $stmt = $this->pdo->prepare($query);
 
@@ -28,6 +33,7 @@ class ActivityService
             $app_usage_time = json_encode($data['app_usage_time']);
             $keyboard_usage = $data['keyboard_usage'];
             $mouse_usage = $data['mouse_usage'];
+            $device = $data['device'];
             $created_at = $data['created_at'];
 
             // Bind data ke query
@@ -35,6 +41,7 @@ class ActivityService
             $stmt->bindParam(':app_usage_time', $app_usage_time);
             $stmt->bindParam(':keyboard_usage', $keyboard_usage);
             $stmt->bindParam(':mouse_usage', $mouse_usage);
+            $stmt->bindParam(':device', $device);
             $stmt->bindParam(':created_at', $created_at);
 
             // Eksekusi query
