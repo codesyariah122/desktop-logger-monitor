@@ -1,0 +1,51 @@
+DEBUG:root:Debugging log started
+DEBUG:root:Debugging log started
+ERROR:pynput.mouse.Listener:Unhandled exception in listener callback
+Traceback (most recent call last):
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\win32.py", line 386, in _handler
+    converted = self._convert(code, msg, lpdata)
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\win32.py", line 401, in _convert
+    raise NotImplementedError()
+NotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\__init__.py", line 229, in inner
+    return f(self, *args, **kwargs)
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\win32.py", line 390, in _handler
+    self._handle(code, msg, lpdata)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+TypeError: '_thread._ThreadHandle' object is not callable
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost:9091
+DEBUG:urllib3.connectionpool:http://localhost:9091 "GET /api/check-email?email=pujiermanto@gmail.com HTTP/1.1" 200 None
+ERROR:pynput.mouse.Listener:Unhandled exception in listener callback
+Traceback (most recent call last):
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\win32.py", line 386, in _handler
+    converted = self._convert(code, msg, lpdata)
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\win32.py", line 401, in _convert
+    raise NotImplementedError()
+NotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\__init__.py", line 229, in inner
+    return f(self, *args, **kwargs)
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\win32.py", line 390, in _handler
+    self._handle(code, msg, lpdata)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+TypeError: '_thread._ThreadHandle' object is not callable
+ERROR:pynput.keyboard.Listener:Unhandled exception in listener callback
+Traceback (most recent call last):
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\__init__.py", line 229, in inner
+    return f(self, *args, **kwargs)
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\keyboard\_win32.py", line 316, in _process
+    self.on_press(key)
+    ~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Laptop Store 95\AppData\Local\Programs\Python\Python313\Lib\site-packages\pynput\_util\__init__.py", line 145, in inner
+    if f(*args) is False:
+       ~^^^^^^^
+TypeError: ActivityMonitorApp.on_keyboard_event() takes 1 positional argument but 2 were given
+DEBUG:urllib3.connectionpool:Starting new HTTP connection (1): localhost:9091
+DEBUG:urllib3.connectionpool:http://localhost:9091 "POST /api/send-activity HTTP/1.1" 200 None

@@ -35,7 +35,7 @@ class LogController
     {
         // Hanya izinkan metode POST
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405); // Metode tidak diizinkan
+            http_response_code(405);
             echo json_encode([
                 'status' => 'error',
                 'message' => 'Only POST method is allowed.'
