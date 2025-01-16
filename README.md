@@ -33,5 +33,11 @@ python -m PyInstaller --add-data "assets;assets" --add-data "data;data" --hidden
 ### Using exclude
 
 ```
-python -m PyInstaller --add-data "assets;assets" --add-data "data;data" --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5
+python -m PyInstaller  --add-data "assets;assets" --add-data "data;data" --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5
+```
+
+### No Console
+
+```
+python -m PyInstaller --noconsole  --add-data "assets;assets" --add-data "data;data" --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5
 ```
