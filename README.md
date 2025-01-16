@@ -1,4 +1,4 @@
-#### Python 3 compatibility
+#### Python 3.10.9 compatibility
 
 - Build
 
