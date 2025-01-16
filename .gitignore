@@ -3,3 +3,4 @@ build/
 *.spec
 send-activity/vendor/
 venv/
+tools/Output/
