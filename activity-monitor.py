@@ -87,7 +87,7 @@ class EmailDialog(QDialog):
     def check_email_api(self, email):
         """Check email validity via API"""
         try:
-            response = requests.get(f'http://localhost:9091/api/check-email?email={email}')
+            response = requests.get(f'https://pm-activity.tokoweb.live/api/check-email?email={email}')
             if response.status_code == 200:
                 response_data = response.json()
                 print("API Response:", response_data)
@@ -187,13 +187,17 @@ class ActivityMonitorApp(QWidget):
         self.device_info_label = QLabel(self.get_device_name())
         self.device_info_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: gray;")
         main_layout.addWidget(self.device_info_label)
+        
+        self.db_timer = QTimer(self)
+        self.db_timer.timeout.connect(self.send_data_to_db)
+        self.db_timer.start(3600000)
 
         self.setLayout(main_layout)
 
     def get_user_data_from_api(self):
         """Get user data from API using the provided email."""
         try:
-            response = requests.get(f'http://localhost:9091/api/user-data?email={self.user_email}')
+            response = requests.get(f'https://pm-activity.tokoweb.live/api/user-data?email={self.user_email}')
             if response.status_code == 200:
                 user_data = response.json()             
                 self.display_user_data(user_data)
@@ -224,7 +228,7 @@ class ActivityMonitorApp(QWidget):
         
         if image_path:
             try:
-                image_url = f'http://localhost/pm-local/files/profile_images/{image_path}'
+                image_url = f'https://pm.tokoweb.live/files/profile_images/{image_path}'
                 print(f"Trying to load image from: {image_url}")
                 
                 response = requests.get(image_url)
@@ -410,7 +414,7 @@ class ActivityMonitorApp(QWidget):
                 'created_at': data['created_at']
             }
 
-            url = 'http://localhost:9091/api/send-activity'
+            url = 'https://pm-activity.tokoweb.live/api/send-activity'
             try:
                 response = requests.post(url, data=payload)
                 if response.status_code == 200:

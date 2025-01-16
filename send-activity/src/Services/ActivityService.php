@@ -23,34 +23,65 @@ class ActivityService
     public function processActivity($data)
     {
         try {
-            $query = "INSERT INTO log (email, app_usage_time, keyboard_usage, mouse_usage, device, created_at) 
-                  VALUES (:email, :app_usage_time, :keyboard_usage, :mouse_usage, :device, :created_at)";
+            // Ambil tanggal saja dari created_at untuk perbandingan
+            $created_date = date('Y-m-d', strtotime($data['created_at']));
 
-            $stmt = $this->pdo->prepare($query);
+            // Cek apakah data sudah ada di database
+            $queryCheck = "SELECT COUNT(*) as count 
+                       FROM log 
+                       WHERE email = :email AND device = :device AND DATE(created_at) = :created_date";
 
-            // Buat variabel untuk setiap nilai
-            $email = $data['email'];
-            $app_usage_time = json_encode($data['app_usage_time']);
-            $keyboard_usage = $data['keyboard_usage'];
-            $mouse_usage = $data['mouse_usage'];
-            $device = $data['device'];
-            $created_at = $data['created_at'];
+            $stmtCheck = $this->pdo->prepare($queryCheck);
+            $stmtCheck->bindParam(':email', $data['email']);
+            $stmtCheck->bindParam(':device', $data['device']);
+            $stmtCheck->bindParam(':created_date', $created_date);
+            $stmtCheck->execute();
+            $result = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
-            // Bind data ke query
-            $stmt->bindParam(':email', $email);
-            $stmt->bindParam(':app_usage_time', $app_usage_time);
-            $stmt->bindParam(':keyboard_usage', $keyboard_usage);
-            $stmt->bindParam(':mouse_usage', $mouse_usage);
-            $stmt->bindParam(':device', $device);
-            $stmt->bindParam(':created_at', $created_at);
+            if ($result['count'] > 0) {
+                // Jika data sudah ada, lakukan UPDATE
+                $queryUpdate = "UPDATE log 
+                            SET app_usage_time = :app_usage_time, 
+                                keyboard_usage = :keyboard_usage, 
+                                mouse_usage = :mouse_usage 
+                            WHERE email = :email AND device = :device AND DATE(created_at) = :created_date";
 
-            // Eksekusi query
-            $stmt->execute();
+                $stmtUpdate = $this->pdo->prepare($queryUpdate);
 
-            return [
-                'status' => 'success',
-                'message' => 'Activity data saved successfully.'
-            ];
+                $stmtUpdate->bindParam(':app_usage_time', json_encode($data['app_usage_time']));
+                $stmtUpdate->bindParam(':keyboard_usage', $data['keyboard_usage']);
+                $stmtUpdate->bindParam(':mouse_usage', $data['mouse_usage']);
+                $stmtUpdate->bindParam(':email', $data['email']);
+                $stmtUpdate->bindParam(':device', $data['device']);
+                $stmtUpdate->bindParam(':created_date', $created_date);
+
+                $stmtUpdate->execute();
+
+                return [
+                    'status' => 'success',
+                    'message' => 'Activity data updated successfully.'
+                ];
+            } else {
+                // Jika data belum ada, lakukan INSERT
+                $queryInsert = "INSERT INTO log (email, app_usage_time, keyboard_usage, mouse_usage, device, created_at) 
+                            VALUES (:email, :app_usage_time, :keyboard_usage, :mouse_usage, :device, :created_at)";
+
+                $stmtInsert = $this->pdo->prepare($queryInsert);
+
+                $stmtInsert->bindParam(':email', $data['email']);
+                $stmtInsert->bindParam(':app_usage_time', json_encode($data['app_usage_time']));
+                $stmtInsert->bindParam(':keyboard_usage', $data['keyboard_usage']);
+                $stmtInsert->bindParam(':mouse_usage', $data['mouse_usage']);
+                $stmtInsert->bindParam(':device', $data['device']);
+                $stmtInsert->bindParam(':created_at', $data['created_at']);
+
+                $stmtInsert->execute();
+
+                return [
+                    'status' => 'success',
+                    'message' => 'Activity data saved successfully.'
+                ];
+            }
         } catch (PDOException $e) {
             return [
                 'status' => 'error',
