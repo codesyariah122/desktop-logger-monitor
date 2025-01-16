@@ -3,12 +3,13 @@
 
 import os
 import io
-import platform
 import requests
 import time
 import json
 import sys
 import platform
+import pyautogui
+import keyboard
 from PySide2.QtGui import QIcon, QPixmap
 from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import (
@@ -20,8 +21,6 @@ from PySide2.QtWidgets import (
 from PySide2.QtCore import Qt
 # from pynput import keyboard, mouse
 from PySide2.QtWidgets import QSystemTrayIcon,  QMenu, QAction
-import pyautogui
-import keyboard
 from threading import Thread
 from datetime import datetime
 
