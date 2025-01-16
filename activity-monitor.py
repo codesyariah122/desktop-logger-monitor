@@ -42,12 +42,16 @@ class EmailDialog(QDialog):
 
     def initUI(self):
         layout = QVBoxLayout()
-
+        
+        layout.setSpacing(1)
+        
         self.logo_label = QLabel(self)
         self.logo_pixmap = QPixmap(resource_path("assets/logo-master.png"))
         scaled_pixmap = self.logo_pixmap.scaled(200, 100)
         self.logo_label.setPixmap(scaled_pixmap)
         self.logo_label.setFixedSize(200, 100)
+        self.logo_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.logo_label, alignment=Qt.AlignCenter)
         layout.addWidget(self.logo_label)
 
         self.heading_label = QLabel("Activity Monitor | PM Tokoweb", self)
@@ -130,7 +134,7 @@ class ActivityMonitorApp(QWidget):
         icon = QIcon(icon_path)
         
         self.tray_icon = QSystemTrayIcon(icon, self)
-        self.tray_icon.setToolTip("Activity Monitor Running")
+        self.tray_icon.setToolTip("Activity Monitor PM Tokoweb is Running")
         
         tray_menu = QMenu()
         
@@ -179,6 +183,10 @@ class ActivityMonitorApp(QWidget):
         self.email_label = QLabel("User Email: None")
         self.email_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
         main_layout.addWidget(self.email_label)
+        
+        self.device_info_label = QLabel(self.get_device_name())
+        self.device_info_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: gray;")
+        main_layout.addWidget(self.device_info_label)
 
         self.setLayout(main_layout)
 
