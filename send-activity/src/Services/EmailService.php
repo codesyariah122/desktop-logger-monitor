@@ -31,7 +31,7 @@ class EmailService
     public function getUserDataByEmail($email)
     {
         try {
-            $stmt = $this->pdo->prepare("SELECT first_name, last_name, image, job_title FROM _users WHERE email = :email LIMIT 1");
+            $stmt = $this->pdo->prepare("SELECT id, first_name, last_name, image, job_title FROM _users WHERE email = :email LIMIT 1");
             $stmt->bindParam(':email', $email);
             $stmt->execute();
 
@@ -40,6 +40,23 @@ class EmailService
             return $userData ? $userData : null;
         } catch (PDOException $e) {
             return null;
+        }
+    }
+
+    public function getAttendanceDataByUserId($userId)
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL AND DATE(in_time) = CURDATE()"
+            );
+            $stmt->bindParam(':user_id', $userId);
+            $stmt->execute();
+
+            $attendanceData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $attendanceData ? $attendanceData : [];
+        } catch (PDOException $e) {
+            return [];
         }
     }
 }

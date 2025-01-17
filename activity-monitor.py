@@ -15,12 +15,11 @@ from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
     QTableWidget, QTableWidgetItem, QLineEdit,
-    QPushButton, QDialog, QMenu, QAction, QSystemTrayIcon
+    QPushButton, QDialog, QMenu, QAction, QSystemTrayIcon, QHBoxLayout
 )
 
-from PySide2.QtCore import Qt
+from PySide2.QtCore import Qt, QDateTime
 # from pynput import keyboard, mouse
-from PySide2.QtWidgets import QSystemTrayIcon,  QMenu, QAction
 from threading import Thread
 from datetime import datetime
 
@@ -178,14 +177,14 @@ class ActivityMonitorApp(QWidget):
         self.activity_label = QLabel("Keyboard Usage: 0% | Mouse Usage: 0%")
         self.activity_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
         main_layout.addWidget(self.activity_label)
-
-        self.email_label = QLabel("User Email: None")
-        self.email_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
-        main_layout.addWidget(self.email_label)
         
         self.device_info_label = QLabel(self.get_device_name())
         self.device_info_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: gray;")
         main_layout.addWidget(self.device_info_label)
+
+        self.email_label = QLabel("User Email: None")
+        self.email_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        main_layout.addWidget(self.email_label)
         
         self.db_timer = QTimer(self)
         self.db_timer.timeout.connect(self.send_data_to_db)
@@ -211,20 +210,30 @@ class ActivityMonitorApp(QWidget):
         if not user_info:
             print("User info is missing from the API response.")
             return
+        
+        attendance_data = user_info.get('attendance', [])
+        if attendance_data:
+            clock_in = attendance_data[0].get('in_time')
+            if clock_in:
+                clock_in_time = QDateTime.fromString(clock_in, "yyyy-MM-dd HH:mm:ss")
+                formatted_clock_in = clock_in_time.toString("yyyy-MM-dd HH:mm:ss")
+                self.clock_in_label = QLabel(f"Clock In: {formatted_clock_in}", self)
+                self.clock_in_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+                self.layout().addWidget(self.clock_in_label)
+            else:
+                self.clock_in_label = QLabel("Clock In: Not available", self)
+                self.clock_in_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+                self.layout().addWidget(self.clock_in_label)
 
         first_name = user_info.get('first_name', 'Unknown')
         last_name = user_info.get('last_name', 'Unknown')
-        self.user_name_label = QLabel(f"Name: {first_name} {last_name}", self)
+        self.user_name_label = QLabel(f"{first_name} {last_name}", self)
         self.user_name_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
-        self.layout().addWidget(self.user_name_label)
-
-        job_title = user_info.get('job_title', 'Not specified')
-        self.job_title_label = QLabel(f"Job Title: {job_title}", self)
-        self.job_title_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
-        self.layout().addWidget(self.job_title_label)
+        
+        user_layout = QHBoxLayout()
+        self.layout().addLayout(user_layout)
 
         image_path = user_info.get('image')
-        
         if image_path:
             try:
                 image_url = f'https://pm.tokoweb.live/files/profile_images/{image_path}'
@@ -236,12 +245,14 @@ class ActivityMonitorApp(QWidget):
                     pixmap = QPixmap()
                     pixmap.loadFromData(image_data.read())
                     
-                    if not pixmap.isNull():  # Ensure the image is valid
+                    if not pixmap.isNull():
                         self.user_image_label = QLabel(self)
                         self.user_image_label.setPixmap(pixmap)
                         self.user_image_label.setScaledContents(True)
-                        self.user_image_label.setFixedSize(100, 100)
-                        self.layout().addWidget(self.user_image_label)
+                        self.user_image_label.setFixedSize(80, 80)
+                        self.user_image_label.setStyleSheet("border-radius: 100px;")
+                        user_layout.addWidget(self.user_image_label)
+                        
                     else:
                         print(f"Failed to load image from response.")
                 else:
@@ -250,6 +261,13 @@ class ActivityMonitorApp(QWidget):
                 print(f"Error loading image: {e}")
         else:
             print("No image found in user data.")
+
+        user_layout.addWidget(self.user_name_label)
+
+        job_title = user_info.get('job_title', 'Not specified')
+        self.job_title_label = QLabel(f"Job Title: {job_title}", self)
+        self.job_title_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        self.layout().addWidget(self.job_title_label)
             
     def show_email_dialog(self):
         """Show the email input dialog before starting activity monitoring."""

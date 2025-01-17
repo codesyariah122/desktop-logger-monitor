@@ -53,10 +53,24 @@ class EmailController
             $userData = $this->emailService->getUserDataByEmail($email);
 
             if ($userData) {
+                $attendanceData = $this->emailService->getAttendanceDataByUserId($userData['id']);
+
+                $timezone = new \DateTimeZone('Asia/Jakarta');
+                foreach ($attendanceData as &$attendance) {
+                    if (isset($attendance['in_time'])) {
+                        $dateTime = new \DateTime($attendance['in_time'], new \DateTimeZone('UTC'));
+                        $dateTime->setTimezone($timezone);
+
+                        $attendance['in_time'] = $dateTime->format('Y-m-d H:i:s');
+                    }
+                }
+
+                $userData['attendance'] = !empty($attendanceData) ? $attendanceData : [];
+
                 if (isset($userData['image'])) {
                     $imageData = unserialize($userData['image']);
                     if (isset($imageData['file_name'])) {
-                        $userData['image'] = $imageData['file_name']; // Ambil nama file
+                        $userData['image'] = $imageData['file_name'];
                     }
                 }
 
