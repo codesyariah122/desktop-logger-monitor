@@ -65,13 +65,14 @@ class ActivityService
                 ];
             } else {
                 // Jika data belum ada, lakukan INSERT
-                $queryInsert = "INSERT INTO log (email, app_usage_time, keyboard_usage, mouse_usage, device, created_at) 
-                            VALUES (:email, :app_usage_time, :keyboard_usage, :mouse_usage, :device, :created_at)";
+                $queryInsert = "INSERT INTO log (email, location, app_usage_time, keyboard_usage, mouse_usage, device, created_at) 
+                            VALUES (:email, :location, :app_usage_time, :keyboard_usage, :mouse_usage, :device, :created_at)";
 
                 $stmtInsert = $this->pdo->prepare($queryInsert);
-
+                $app_usage_time = json_encode($data['app_usage_time']);
                 $stmtInsert->bindParam(':email', $data['email']);
-                $stmtInsert->bindParam(':app_usage_time', json_encode($data['app_usage_time']));
+                $stmtInsert->bindParam(':location', $data['location']);
+                $stmtInsert->bindParam(':app_usage_time', $app_usage_time);
                 $stmtInsert->bindParam(':keyboard_usage', $data['keyboard_usage']);
                 $stmtInsert->bindParam(':mouse_usage', $data['mouse_usage']);
                 $stmtInsert->bindParam(':device', $data['device']);

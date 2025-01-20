@@ -2,7 +2,6 @@
 # @return package
 import os
 import io
-import geocoder
 import requests
 import time
 import json
@@ -10,18 +9,24 @@ import sys
 import platform
 import pyautogui
 import keyboard
-from PySide2.QtGui import QIcon, QPixmap
-from PySide2.QtCore import QTimer
+from dotenv import load_dotenv
+from PySide2.QtGui import (QIcon, QPixmap)
+from PySide2.QtCore import (QTimer, QTime, QEvent)
 from PySide2.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
     QTableWidget, QTableWidgetItem, QLineEdit,
-    QPushButton, QDialog, QMenu, QAction, QSystemTrayIcon, QHBoxLayout
+    QPushButton, QDialog, QMenu, QAction, QSystemTrayIcon, QHBoxLayout, QMessageBox
 )
 
-from PySide2.QtCore import Qt, QDateTime
+from PySide2.QtCore import (Qt, QDateTime)
 # from pynput import keyboard, mouse
 from threading import Thread
 from datetime import datetime
+
+load_dotenv()
+
+api_url = os.getenv('API_URL')
+web_url = os.getenv('WEB_URL')
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -32,8 +37,9 @@ assets_path = resource_path("assets")
 data_path = resource_path("data")
 
 class EmailDialog(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, activity_monitor_app, parent=None):
+        super().__init__(parent)
+        self.activity_monitor_app = activity_monitor_app
         self.preloaded_email = None
         self.data_file = resource_path("data/activity_data.json") 
         self.setWindowTitle("Enter Email")
@@ -48,6 +54,11 @@ class EmailDialog(QDialog):
             
         layout = QVBoxLayout()
         layout.setSpacing(1)
+        # screen_geometry = QApplication.primaryScreen().geometry()
+        # screen_width = screen_geometry.width()
+        # screen_height = screen_geometry.height()
+        # self.resize(screen_width, screen_height)
+        
         self.logo_label = QLabel(self)
         self.logo_pixmap = QPixmap(resource_path("assets/logo-master.png"))
         scaled_pixmap = self.logo_pixmap.scaled(200, 100)
@@ -55,11 +66,10 @@ class EmailDialog(QDialog):
         self.logo_label.setFixedSize(200, 100)
         self.logo_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.logo_label, alignment=Qt.AlignCenter)
-        layout.addWidget(self.logo_label)
 
         self.heading_label = QLabel("Activity Monitor | PM Tokoweb", self)
         self.heading_label.setAlignment(Qt.AlignCenter)
-        self.heading_label.setStyleSheet("font-size: 18px; margin-bottom: 20px;")
+        self.heading_label.setStyleSheet("font-size: 18px; margin-top: 5px; margin-bottom: 25px;")
         layout.addWidget(self.heading_label)
 
         if self.preloaded_email:
@@ -94,25 +104,42 @@ class EmailDialog(QDialog):
             print("Email not found in the file, user needs to input.")
         except Exception as e:
             print(f"Error loading email from file: {e}")
+            
     def confirm_email(self):
         email = self.email_input.text()
         if email:
             response = self.check_email_api(email)
+            print(response)
             if response.get('status') == 'valid':
-                self.user_email = email
-                self.accept()
+                # Ambil data user dari API untuk mendapatkan clock_in_time
+                user_data = self.activity_monitor_app.get_user_data_from_api(email)
+                # Pastikan user_data adalah dictionary
+                print(user_data)
+                if isinstance(user_data, dict):
+                    attendance_data = user_data.get('data', {}).get('attendance', [])
+                    print("Attendance Data:", attendance_data)
+                    if attendance_data and attendance_data[0].get('in_time'):
+                        # Jika clock_in_time tersedia, lanjutkan
+                        self.user_email = email
+                        self.accept()
+                    else:
+                        # Tampilkan alert jika belum clock in
+                        QMessageBox.warning(self, "Clock In Required", "Silahkan , Clock In di website PM 😱")
+                else:
+                    QMessageBox.warning(self, "Invalid Data", "Terjadi kesalahan dalam mengambil data pengguna 🫣")
             else:
-                self.email_label.setText("Email belum terdaftar di database PM.")
+                QMessageBox.warning(self, "Invalid Data", "Email anda belum terdaftar di database PM 😱")
+                self.email_label.setText("Email belum terdaftar di database PM 😱")
         else:
-            self.email_label.setText("Please enter a valid email.")
+            QMessageBox.warning(self, "Invalid Data", "Input alamat email dengan format yang sesuai dan terdaftar di database PM 🫣")
+            self.email_label.setText("Please enter a valid email 🫣")
 
     def check_email_api(self, email):
         """Check email validity via API"""
         try:
-            response = requests.get(f'https://pm-activity.tokoweb.live/api/check-email?email={email}')
+            response = requests.get(f'{api_url}/check-email?email={email}')
             if response.status_code == 200:
                 response_data = response.json()
-                print("API Response:", response_data)
                 if response_data.get('status') == True:
                     return {'status': 'valid'}
                 else:
@@ -152,20 +179,42 @@ class ActivityMonitorApp(QWidget):
         if not self.show_email_dialog():
             sys.exit(0)
             
+    def start_at_next_hour(self):
+        """Start the timer so that it runs at the beginning of the next hour"""
+        current_time = QTime.currentTime()
+        next_hour = current_time.addSecs(3600 - current_time.second() - 60 * current_time.minute())
+        
+        # Menghitung waktu delay dalam milidetik
+        delay = current_time.msecsTo(next_hour)
+
+        # Mulai timer setelah delay
+        QTimer.singleShot(delay, self.start_hourly_timer)
+
+    def start_hourly_timer(self):
+        """Set the timer to run every 1 hour after the initial start"""
+        self.db_timer.start(3600000)
+            
     def initUI(self):
         main_layout = QVBoxLayout()
+        
+        screen_geometry = QApplication.primaryScreen().geometry()
+        screen_width = screen_geometry.width()
+        screen_height = screen_geometry.height()
+        self.resize(screen_width, screen_height)
 
         self.active_app_label = QLabel("Active Application: None")
         self.active_app_label.setStyleSheet("font-size: 14px; font-weight: bold; margin-top: 10px;")
         main_layout.addWidget(self.active_app_label)
 
         self.app_table = QTableWidget(0, 2)
-        self.app_table.setHorizontalHeaderLabels(["Application", "Usage Time"])
+        self.app_table.setHorizontalHeaderLabels(["Application 📝", "Usage Time 🕢"])
         self.app_table.setStyleSheet("background-color: #f7f7f7; border: 1px solid #ccc;")
+        self.app_table.setColumnWidth(0, 600)
+        self.app_table.setColumnWidth(1, 50)
         self.app_table.horizontalHeader().setStretchLastSection(True)
         main_layout.addWidget(self.app_table)
 
-        self.activity_label = QLabel("Keyboard Usage: 0% | Mouse Usage: 0%")
+        self.activity_label = QLabel("Keyboard Usage 💻 : 0% | Mouse Usage 🖱️ : 0%")
         self.activity_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
         main_layout.addWidget(self.activity_label)
         
@@ -182,9 +231,16 @@ class ActivityMonitorApp(QWidget):
         main_layout.addWidget(self.location_label)
 
         
+        # self.db_timer = QTimer(self)
+        # self.db_timer.timeout.connect(self.send_data_to_db)
+        # self.db_timer.start(3600000)
+        
+        # Set interval timer untuk 1 jam
         self.db_timer = QTimer(self)
         self.db_timer.timeout.connect(self.send_data_to_db)
-        self.db_timer.start(3600000)
+
+        # Hitung interval waktu sampai jam berikutnya
+        self.start_at_next_hour()
 
         self.setLayout(main_layout)
         
@@ -233,50 +289,61 @@ class ActivityMonitorApp(QWidget):
             
             response = requests.get(f'https://ipinfo.io/{ip_address}/json')
             location = response.json()
-
-            print(location)
             
             city = location.get('city', 'Unknown')
             country = location.get('country', 'Unknown')
+            provider = location.get('org', 'Unknown')
 
             if city == 'Unknown' and country == 'Unknown':
                 city = 'Unknown'
                 country = 'Unknown'
                 
-            self.location_label.setText(f"Location: {city}, {country}")
-            print(f"Location: {city}, {country}")
+            self.location_label.setText(f"Location: {city}, {country} | {provider}")
 
         except Exception as e:
             print(f"Error fetching location: {e}")
 
 
 
-    def get_user_data_from_api(self):
+    def get_user_data_from_api(self, email):
         """Get user data from API using the provided email."""
         try:
-            response = requests.get(f'https://pm-activity.tokoweb.live/api/user-data?email={self.user_email}')
+            user_email_to_use = self.user_email if self.user_email else email
+            response = requests.get(f'{api_url}/user-data?email={user_email_to_use}')
             if response.status_code == 200:
                 user_data = response.json()             
                 self.display_user_data(user_data)
+                return user_data 
             else:
                 print(f"Error fetching user data: {response.status_code}")
         except Exception as e:
             print(f"Error during fetching user data: {e}")
+        return {}
 
     def display_user_data(self, user_data):
-        """Display fetched user data in the UI."""        
+        """Display fetched user data in the UI."""
         user_info = user_data.get('data', {})
         if not user_info:
             print("User info is missing from the API response.")
             return
         
+        # Avoid adding the same widgets multiple times
+        if hasattr(self, 'clock_in_label'):
+            self.clock_in_label.deleteLater()  # Remove existing widget if exists
+        if hasattr(self, 'user_name_label'):
+            self.user_name_label.deleteLater()
+        if hasattr(self, 'user_image_label'):
+            self.user_image_label.deleteLater()
+        if hasattr(self, 'job_title_label'):
+            self.job_title_label.deleteLater()
+
         attendance_data = user_info.get('attendance', [])
         if attendance_data:
             clock_in = attendance_data[0].get('in_time')
             if clock_in:
                 clock_in_time = QDateTime.fromString(clock_in, "yyyy-MM-dd HH:mm:ss")
                 formatted_clock_in = clock_in_time.toString("yyyy-MM-dd HH:mm:ss")
-                self.clock_in_label = QLabel(f"Clock In: {formatted_clock_in}", self)
+                self.clock_in_label = QLabel(f"Clock In ⌛: {formatted_clock_in} ", self)
                 self.clock_in_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
                 self.layout().addWidget(self.clock_in_label)
             else:
@@ -288,14 +355,13 @@ class ActivityMonitorApp(QWidget):
         last_name = user_info.get('last_name', 'Unknown')
         self.user_name_label = QLabel(f"{first_name} {last_name}", self)
         self.user_name_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
-        
         user_layout = QHBoxLayout()
         self.layout().addLayout(user_layout)
 
         image_path = user_info.get('image')
         if image_path:
             try:
-                image_url = f'https://pm.tokoweb.live/files/profile_images/{image_path}'
+                image_url = f'{web_url}/files/profile_images/{image_path}'
                 print(f"Trying to load image from: {image_url}")
                 
                 response = requests.get(image_url)
@@ -308,10 +374,17 @@ class ActivityMonitorApp(QWidget):
                         self.user_image_label = QLabel(self)
                         self.user_image_label.setPixmap(pixmap)
                         self.user_image_label.setScaledContents(True)
-                        self.user_image_label.setFixedSize(80, 80)
-                        self.user_image_label.setStyleSheet("border-radius: 100px;")
+                        self.user_image_label.setFixedSize(70, 70)
+                        # user_layout.addWidget(self.user_image_label)
+                        self.user_image_label.setStyleSheet("""
+                            border-radius: 100%;
+                            border: 2px solid #ddd;
+                        """)
+                        self.user_image_label.setAlignment(Qt.AlignCenter)
                         user_layout.addWidget(self.user_image_label)
-                        
+
+                        # Add hover effect using event filter
+                        self.user_image_label.installEventFilter(self)
                     else:
                         print(f"Failed to load image from response.")
                 else:
@@ -327,10 +400,29 @@ class ActivityMonitorApp(QWidget):
         self.job_title_label = QLabel(f"Job Title: {job_title}", self)
         self.job_title_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
         self.layout().addWidget(self.job_title_label)
+        
+    def eventFilter(self, obj, event):
+        if obj == self.user_image_label:
+            if event.type() == QEvent.HoverEnter:
+                obj.setStyleSheet("""
+                    border-radius: 40px;
+                    border: 2px solid #ff5733;
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                """)
+            elif event.type() == QEvent.HoverLeave:
+                obj.setStyleSheet("""
+                    border-radius: 40px;
+                    border: 2px solid #ddd;
+                    transform: scale(1);
+                    box-shadow: none;
+                """)
+        return super().eventFilter(obj, event)
+
             
     def show_email_dialog(self):
         """Show the email input dialog before starting activity monitoring."""
-        email_dialog = EmailDialog()
+        email_dialog = EmailDialog(self)
         email_dialog.load_email_from_file()
         
         if email_dialog.exec_() == QDialog.Accepted:
@@ -338,7 +430,7 @@ class ActivityMonitorApp(QWidget):
             if self.user_email:
                 print(f"User email set to: {self.user_email}")
                 self.email_label.setText(f"User Email: {self.user_email}")
-                self.get_user_data_from_api()
+                self.get_user_data_from_api(self.user_email)
                 self.start_tracking()
                 return True
         return False
@@ -420,6 +512,9 @@ class ActivityMonitorApp(QWidget):
             h, m, s = self.format_time(time_used)
             self.app_table.setItem(row, 0, QTableWidgetItem(app))
             self.app_table.setItem(row, 1, QTableWidgetItem(f"{h}h {m}m {s}s"))
+            time_item = QTableWidgetItem(f"{h}h {m}m {s}s")
+            time_item.setTextAlignment(Qt.AlignCenter)
+            self.app_table.setItem(row, 1, time_item)
 
         self.total_time_seconds += 1
 
@@ -451,9 +546,8 @@ class ActivityMonitorApp(QWidget):
     def save_data_to_json(self):
         """Save the usage data to a JSON file."""
         if not self.user_email:  # Prevent saving if the email is not set
-            print("Email is not set. Data will not be saved.")
             return
-        
+
         device_name = self.get_device_name() 
         location = self.location_label.text().replace("Location: ", "") if hasattr(self, 'location_label') else "Location not available"
         
@@ -518,8 +612,7 @@ class ActivityMonitorApp(QWidget):
                 'created_at': data['created_at']
             }
             
-            print(payload)
-            url = 'https://pm-activity.tokoweb.live/api/send-activity'
+            url = f'{api_url}/send-activity'
             try:
                 response = requests.post(url, data=payload)
                 if response.status_code == 200:
@@ -534,4 +627,3 @@ if __name__ == "__main__":
     window = ActivityMonitorApp()
     window.show()
     sys.exit(app.exec_())
-

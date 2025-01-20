@@ -56,7 +56,7 @@ class LogController
         $mouse_usage = isset($_POST['mouse_usage']) ? floatval($_POST['mouse_usage']) : null;
         $device = isset($_POST['device']) ? $_POST['device'] : null;
 
-        if (empty($email) || empty($app_usage_time) || $keyboard_usage === null || $mouse_usage === null || $device === null) {
+        if (empty($email) || empty($location) || empty($app_usage_time) || $keyboard_usage === null || $mouse_usage === null || $device === null) {
             http_response_code(400);
             echo json_encode([
                 'status' => 'error',

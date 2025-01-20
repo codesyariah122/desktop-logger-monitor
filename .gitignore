@@ -4,3 +4,4 @@ build/
 send-activity/vendor/
 venv/
 tools/Output/
+.env

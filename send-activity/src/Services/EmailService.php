@@ -46,8 +46,11 @@ class EmailService
     public function getAttendanceDataByUserId($userId)
     {
         try {
+            // $stmt = $this->pdo->prepare(
+            //     "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL AND DATE(in_time) = CURDATE()"
+            // );
             $stmt = $this->pdo->prepare(
-                "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL AND DATE(in_time) = CURDATE()"
+                "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL"
             );
             $stmt->bindParam(':user_id', $userId);
             $stmt->execute();
