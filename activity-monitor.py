@@ -511,12 +511,14 @@ class ActivityMonitorApp(QWidget):
                 'email': data['email'],
                 "location": data['location'],
                 'app_usage_time': json.dumps(data['app_usage_time']),
+                # 'app_usage_time': data['app_usage_time'],
                 'keyboard_usage': data['keyboard_usage'],
                 'mouse_usage': data['mouse_usage'],
                 'device': data['device'],
                 'created_at': data['created_at']
             }
-
+            
+            print(payload)
             url = 'https://pm-activity.tokoweb.live/api/send-activity'
             try:
                 response = requests.post(url, data=payload)

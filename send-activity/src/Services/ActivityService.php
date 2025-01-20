@@ -33,7 +33,6 @@ class ActivityService
 
             $stmtCheck = $this->pdo->prepare($queryCheck);
             $stmtCheck->bindParam(':email', $data['email']);
-            $stmtCheck->bindParam(':location', $data['location']);
             $stmtCheck->bindParam(':device', $data['device']);
             $stmtCheck->bindParam(':created_date', $created_date);
             $stmtCheck->execute();
@@ -44,15 +43,17 @@ class ActivityService
                 $queryUpdate = "UPDATE log 
                             SET app_usage_time = :app_usage_time, 
                                 keyboard_usage = :keyboard_usage, 
-                                mouse_usage = :mouse_usage 
+                                mouse_usage = :mouse_usage,
+                                location = :location
                             WHERE email = :email AND device = :device AND DATE(created_at) = :created_date";
 
                 $stmtUpdate = $this->pdo->prepare($queryUpdate);
-
-                $stmtUpdate->bindParam(':app_usage_time', json_encode($data['app_usage_time']));
+                $appUsageTimeJson = json_encode($data['app_usage_time']);
+                $stmtUpdate->bindParam(':app_usage_time', $appUsageTimeJson);
                 $stmtUpdate->bindParam(':keyboard_usage', $data['keyboard_usage']);
                 $stmtUpdate->bindParam(':mouse_usage', $data['mouse_usage']);
                 $stmtUpdate->bindParam(':email', $data['email']);
+                $stmtUpdate->bindParam(':location', $data['location']);
                 $stmtUpdate->bindParam(':device', $data['device']);
                 $stmtUpdate->bindParam(':created_date', $created_date);
 
