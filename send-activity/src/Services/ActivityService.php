@@ -33,6 +33,7 @@ class ActivityService
 
             $stmtCheck = $this->pdo->prepare($queryCheck);
             $stmtCheck->bindParam(':email', $data['email']);
+            $stmtCheck->bindParam(':location', $data['location']);
             $stmtCheck->bindParam(':device', $data['device']);
             $stmtCheck->bindParam(':created_date', $created_date);
             $stmtCheck->execute();

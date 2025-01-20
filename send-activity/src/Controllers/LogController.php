@@ -38,6 +38,8 @@ class LogController
 
     public function sendActivity()
     {
+        $datetime = new \DateTime('now', new \DateTimeZone('Asia/Jakarta'));
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode([
@@ -48,6 +50,7 @@ class LogController
         }
 
         $email = isset($_POST['email']) ? trim($_POST['email']) : null;
+        $location = isset($_POST['location']) ? $_POST['location'] : null;
         $app_usage_time = isset($_POST['app_usage_time']) ? $_POST['app_usage_time'] : null;
         $keyboard_usage = isset($_POST['keyboard_usage']) ? floatval($_POST['keyboard_usage']) : null;
         $mouse_usage = isset($_POST['mouse_usage']) ? floatval($_POST['mouse_usage']) : null;
@@ -74,11 +77,13 @@ class LogController
 
         $data = [
             'email' => $email,
+            'location' => $location,
             'app_usage_time' => $app_usage_time_decoded,
             'keyboard_usage' => $keyboard_usage,
             'mouse_usage' => $mouse_usage,
             'device' => $device,
-            'created_at' => date('Y-m-d H:i:s'),
+            // 'created_at' => date('Y-m-d H:i:s'),
+            'created_at' => $datetime->format('Y-m-d H:i:s')
         ];
 
         $response = $this->activityService->processActivity($data);

@@ -1,8 +1,8 @@
 # @author Puji Ermanto <pujiermanto@gmail>
 # @return package
-
 import os
 import io
+import geocoder
 import requests
 import time
 import json
@@ -34,15 +34,20 @@ data_path = resource_path("data")
 class EmailDialog(QDialog):
     def __init__(self):
         super().__init__()
+        self.preloaded_email = None
+        self.data_file = resource_path("data/activity_data.json") 
         self.setWindowTitle("Enter Email")
         self.setGeometry(300, 300, 400, 150)
         self.initUI()
 
     def initUI(self):
+        if self.preloaded_email:
+            print("Email ditemukan:", self.preloaded_email)
+        else:
+            print("Email belum diatur.")
+            
         layout = QVBoxLayout()
-        
         layout.setSpacing(1)
-        
         self.logo_label = QLabel(self)
         self.logo_pixmap = QPixmap(resource_path("assets/logo-master.png"))
         scaled_pixmap = self.logo_pixmap.scaled(200, 100)
@@ -57,19 +62,38 @@ class EmailDialog(QDialog):
         self.heading_label.setStyleSheet("font-size: 18px; margin-bottom: 20px;")
         layout.addWidget(self.heading_label)
 
-        self.email_label = QLabel("Enter your active email on PM Tokoweb :")
-        layout.addWidget(self.email_label)
-
-        self.email_input = QLineEdit(self)
-        self.email_input.setPlaceholderText("Email")
-        self.email_input.setMinimumHeight(40)
-        layout.addWidget(self.email_input)
+        if self.preloaded_email:
+            self.user_email = self.preloaded_email
+            self.accept()
+        else:
+            self.email_label = QLabel("Enter your active email on PM Tokoweb :")
+            self.email_input = QLineEdit(self)
+            self.email_input.setPlaceholderText("Email disini")
+            self.email_input.setMinimumHeight(40)
+            layout.addWidget(self.email_label)
+            layout.addWidget(self.email_input)
 
         self.confirm_button = QPushButton("Confirm", self)
         self.confirm_button.clicked.connect(self.confirm_email)
         layout.addWidget(self.confirm_button)
 
         self.setLayout(layout)
+    def load_email_from_file(self):
+        """Load email from the activity_data.json file if available."""
+        try:
+            if os.path.exists(self.data_file):
+                with open(self.data_file, 'r') as f:
+                    data = json.load(f)
+                    saved_email = data.get('email', '')  # Note: Ensure the correct key is used here
+                    if saved_email:
+                        self.user_email = saved_email
+                        self.email_input.setText(self.user_email)  # Set the email in the QLineEdit
+                        self.email_label.setText(f"User Email: {self.user_email}")
+                        print(f"Loaded email from file: {self.user_email}")
+                        return
+            print("Email not found in the file, user needs to input.")
+        except Exception as e:
+            print(f"Error loading email from file: {e}")
     def confirm_email(self):
         email = self.email_input.text()
         if email:
@@ -127,6 +151,45 @@ class ActivityMonitorApp(QWidget):
 
         if not self.show_email_dialog():
             sys.exit(0)
+            
+    def initUI(self):
+        main_layout = QVBoxLayout()
+
+        self.active_app_label = QLabel("Active Application: None")
+        self.active_app_label.setStyleSheet("font-size: 14px; font-weight: bold; margin-top: 10px;")
+        main_layout.addWidget(self.active_app_label)
+
+        self.app_table = QTableWidget(0, 2)
+        self.app_table.setHorizontalHeaderLabels(["Application", "Usage Time"])
+        self.app_table.setStyleSheet("background-color: #f7f7f7; border: 1px solid #ccc;")
+        self.app_table.horizontalHeader().setStretchLastSection(True)
+        main_layout.addWidget(self.app_table)
+
+        self.activity_label = QLabel("Keyboard Usage: 0% | Mouse Usage: 0%")
+        self.activity_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        main_layout.addWidget(self.activity_label)
+        
+        self.device_info_label = QLabel(self.get_device_name())
+        self.device_info_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: gray;")
+        main_layout.addWidget(self.device_info_label)
+
+        self.email_label = QLabel("User Email: None")
+        self.email_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
+        main_layout.addWidget(self.email_label)
+        
+        self.location_label = QLabel("Location: Unknown", self)
+        self.location_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: gray;")
+        main_layout.addWidget(self.location_label)
+
+        
+        self.db_timer = QTimer(self)
+        self.db_timer.timeout.connect(self.send_data_to_db)
+        self.db_timer.start(3600000)
+
+        self.setLayout(main_layout)
+        
+        self.get_location()
+        
     def setup_tray_icon(self):
         icon_path = resource_path("assets/fav-1-1.webp")
         icon = QIcon(icon_path)
@@ -161,36 +224,32 @@ class ActivityMonitorApp(QWidget):
     def quit_application(self):
         QApplication.quit()
         
-    def initUI(self):
-        main_layout = QVBoxLayout()
+    def get_location(self):
+        """Fetch user's location using ip-api.com."""
+        try:
+            ip_response = requests.get('https://api.ipify.org?format=json')
+            ip_data = ip_response.json()
+            ip_address = ip_data.get('ip')
+            
+            response = requests.get(f'https://ipinfo.io/{ip_address}/json')
+            location = response.json()
 
-        self.active_app_label = QLabel("Active Application: None")
-        self.active_app_label.setStyleSheet("font-size: 14px; font-weight: bold; margin-top: 10px;")
-        main_layout.addWidget(self.active_app_label)
+            print(location)
+            
+            city = location.get('city', 'Unknown')
+            country = location.get('country', 'Unknown')
 
-        self.app_table = QTableWidget(0, 2)
-        self.app_table.setHorizontalHeaderLabels(["Application", "Usage Time"])
-        self.app_table.setStyleSheet("background-color: #f7f7f7; border: 1px solid #ccc;")
-        self.app_table.horizontalHeader().setStretchLastSection(True)
-        main_layout.addWidget(self.app_table)
+            if city == 'Unknown' and country == 'Unknown':
+                city = 'Unknown'
+                country = 'Unknown'
+                
+            self.location_label.setText(f"Location: {city}, {country}")
+            print(f"Location: {city}, {country}")
 
-        self.activity_label = QLabel("Keyboard Usage: 0% | Mouse Usage: 0%")
-        self.activity_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
-        main_layout.addWidget(self.activity_label)
-        
-        self.device_info_label = QLabel(self.get_device_name())
-        self.device_info_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: gray;")
-        main_layout.addWidget(self.device_info_label)
+        except Exception as e:
+            print(f"Error fetching location: {e}")
 
-        self.email_label = QLabel("User Email: None")
-        self.email_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
-        main_layout.addWidget(self.email_label)
-        
-        self.db_timer = QTimer(self)
-        self.db_timer.timeout.connect(self.send_data_to_db)
-        self.db_timer.start(3600000)
 
-        self.setLayout(main_layout)
 
     def get_user_data_from_api(self):
         """Get user data from API using the provided email."""
@@ -272,6 +331,8 @@ class ActivityMonitorApp(QWidget):
     def show_email_dialog(self):
         """Show the email input dialog before starting activity monitoring."""
         email_dialog = EmailDialog()
+        email_dialog.load_email_from_file()
+        
         if email_dialog.exec_() == QDialog.Accepted:
             self.user_email = email_dialog.email_input.text()
             if self.user_email:
@@ -281,6 +342,24 @@ class ActivityMonitorApp(QWidget):
                 self.start_tracking()
                 return True
         return False
+    
+    def load_email_from_file(self):
+        """Load email from the activity_data.json file if available."""
+        try:
+            if os.path.exists(self.data_file):
+                with open(self.data_file, 'r') as f:
+                    data = json.load(f)
+                    saved_email = data.get('email', '')
+                    if saved_email:
+                        self.preloaded_email = saved_email
+                        self.user_email = saved_email  # Assign directly to user_email
+                        self.email_input.setText(saved_email)  # Pre-fill the email input field
+                        print(f"Loaded email from file: {self.user_email}")
+                    else:
+                        print("Email not found in the file, user needs to input.")
+        except Exception as e:
+            print(f"Error loading email from file: {e}")
+
     def start_tracking(self):
         keyboard_thread = Thread(target=self.monitor_keyboard_events)
         keyboard_thread.start()
@@ -371,10 +450,16 @@ class ActivityMonitorApp(QWidget):
 
     def save_data_to_json(self):
         """Save the usage data to a JSON file."""
+        if not self.user_email:  # Prevent saving if the email is not set
+            print("Email is not set. Data will not be saved.")
+            return
+        
         device_name = self.get_device_name() 
+        location = self.location_label.text().replace("Location: ", "") if hasattr(self, 'location_label') else "Location not available"
         
         data = {
             'email': self.user_email,
+            "location": location,
             'app_usage_time': self.app_usage_time,
             'keyboard_usage': self.keyboard_usage,
             'mouse_usage': self.mouse_usage,
@@ -424,6 +509,7 @@ class ActivityMonitorApp(QWidget):
 
             payload = {
                 'email': data['email'],
+                "location": data['location'],
                 'app_usage_time': json.dumps(data['app_usage_time']),
                 'keyboard_usage': data['keyboard_usage'],
                 'mouse_usage': data['mouse_usage'],
