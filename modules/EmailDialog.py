@@ -1,40 +1,4 @@
-# @author Puji Ermanto <pujiermanto@gmail>
-# @return package
-import os
-import io
-import requests
-import time
-import json
-import sys
-import platform
-import pyautogui
-import keyboard
-from dotenv import load_dotenv
-from PySide2.QtGui import (QIcon, QPixmap)
-from PySide2.QtCore import (QTimer, QTime, QEvent)
-from PySide2.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLabel,
-    QTableWidget, QTableWidgetItem, QLineEdit,
-    QPushButton, QDialog, QMenu, QAction, QSystemTrayIcon, QHBoxLayout, QMessageBox
-)
-
-from PySide2.QtCore import (Qt, QDateTime)
-# from pynput import keyboard, mouse
-from threading import Thread
-from datetime import datetime
-
-load_dotenv()
-
-api_url = os.getenv('API_URL')
-web_url = os.getenv('WEB_URL')
-
-def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
-
-assets_path = resource_path("assets")
-data_path = resource_path("data")
+# EmailDialog class
 
 class EmailDialog(QDialog):
     def __init__(self, activity_monitor_app, parent=None):
@@ -645,4 +609,3 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ActivityMonitorApp()
     window.show()
-    sys.exit(app.exec_())

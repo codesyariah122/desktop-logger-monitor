@@ -10,6 +10,7 @@ SetupIconFile=..\assets\fav-1-1.ico
 [Files]
 Source: "..\assets\fav-1-1.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\activity-monitor.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\.env"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Activity Usage PM Tokoweb"; Filename: "{app}\activity-monitor.exe"; IconFilename: "{app}\fav-1-1.ico"
