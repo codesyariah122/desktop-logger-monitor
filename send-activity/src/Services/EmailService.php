@@ -49,8 +49,12 @@ class EmailService
             // $stmt = $this->pdo->prepare(
             //     "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL AND DATE(in_time) = CURDATE()"
             // );
+            // $stmt = $this->pdo->prepare(
+            //     "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL"
+            // );
+            // Perbandingan tanggal di kedua sisi
             $stmt = $this->pdo->prepare(
-                "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL"
+                "SELECT * FROM _attendance WHERE user_id = :user_id AND out_time IS NULL AND DATE(in_time) = DATE(NOW())"
             );
             $stmt->bindParam(':user_id', $userId);
             $stmt->execute();

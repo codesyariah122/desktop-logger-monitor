@@ -91,4 +91,49 @@ class LogController
         http_response_code($response['status'] === 'success' ? 200 : 500);
         echo json_encode($response, JSON_PRETTY_PRINT);
     }
+
+    public function downloadFile()
+    {
+        try {
+            $filePath = __DIR__ . '/../storage/PMTokowebActivityUsage.exe';
+            $fileName = 'PMTokowebActivityUsage.exe';
+
+            // var_dump($filePath);
+            // die;
+
+            if (file_exists($filePath)) {
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename="' . basename($fileName) . '"');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                header('Content-Length: ' . filesize($filePath));
+                readfile($filePath);
+                exit;
+            } else {
+                http_response_code(404);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'File not found.'
+                ], JSON_PRETTY_PRINT);
+            }
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    public function showDownloadPage()
+    {
+        $viewPath = __DIR__ . '/../Views/download.php';
+        if (file_exists($viewPath)) {
+            include $viewPath;
+        } else {
+            http_response_code(404);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'View not found.'
+            ], JSON_PRETTY_PRINT);
+        }
+    }
 }

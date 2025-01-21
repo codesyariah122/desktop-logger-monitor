@@ -158,6 +158,7 @@ class ActivityMonitorApp(QWidget):
         self.initUI()
         self.setWindowTitle("Activity Usage | PM Tokoweb")
         self.setWindowIcon(QIcon(resource_path("assets/fav-1-1.png")))
+        self.start_at = None
         self.last_mouse_position = None
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_usage)
@@ -184,6 +185,10 @@ class ActivityMonitorApp(QWidget):
         current_time = QTime.currentTime()
         next_hour = current_time.addSecs(3600 - current_time.second() - 60 * current_time.minute())
         
+        # Store the start time in the start_at property
+        self.start_at = current_time.toString("yyyy-MM-dd HH:mm:ss")  # Format as per your preference
+        print(f"Started at: {self.start_at}")  # For debugging
+
         # Menghitung waktu delay dalam milidetik
         delay = current_time.msecsTo(next_hour)
 
@@ -192,10 +197,37 @@ class ActivityMonitorApp(QWidget):
 
     def start_hourly_timer(self):
         """Set the timer to run every 1 hour after the initial start"""
-        self.db_timer.start(3600000)
+        if self.start_at:
+            # Calculate how long it has been since the start time
+            start_time = QTime.fromString(self.start_at, "yyyy-MM-dd HH:mm:ss")
+            current_time = QTime.currentTime()
+
+            elapsed_time = start_time.secsTo(current_time)  # Time elapsed in seconds
+            print(f"Elapsed time since start: {elapsed_time} seconds")
+
+            # If more than 3600 seconds (1 hour), start the hourly timer
+            if elapsed_time >= 3600:
+                self.db_timer.start(3600000)  # 1 hour interval
+                print("Starting hourly data saving.")
+            else:
+                # If it's still not an hour, wait for the remaining time
+                delay = 3600000 - elapsed_time * 1000  # Convert to milliseconds
+                QTimer.singleShot(delay, self.start_hourly_timer)
+        else:
+            print("start_at is not set yet.")
+
             
     def initUI(self):
         main_layout = QVBoxLayout()
+         # self.db_timer = QTimer(self)
+        # self.db_timer.timeout.connect(self.send_data_to_db)
+        # self.db_timer.start(3600000)
+        
+        self.db_timer = QTimer(self)
+        self.db_timer.timeout.connect(self.send_data_to_db)
+
+        # Hitung interval waktu sampai jam berikutnya
+        self.start_at_next_hour()
         
         screen_geometry = QApplication.primaryScreen().geometry()
         screen_width = screen_geometry.width()
@@ -229,18 +261,6 @@ class ActivityMonitorApp(QWidget):
         self.location_label = QLabel("Location: Unknown", self)
         self.location_label.setStyleSheet("font-size: 14px; margin-top: 10px; color: gray;")
         main_layout.addWidget(self.location_label)
-
-        
-        # self.db_timer = QTimer(self)
-        # self.db_timer.timeout.connect(self.send_data_to_db)
-        # self.db_timer.start(3600000)
-        
-        # Set interval timer untuk 1 jam
-        self.db_timer = QTimer(self)
-        self.db_timer.timeout.connect(self.send_data_to_db)
-
-        # Hitung interval waktu sampai jam berikutnya
-        self.start_at_next_hour()
 
         self.setLayout(main_layout)
         
