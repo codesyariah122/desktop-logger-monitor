@@ -14,7 +14,15 @@
         <p class="text-gray-600 mb-6">Klik tombol di bawah untuk mengunduh file installasi.</p>
         <a href="/download-file"
             class="inline-block px-6 py-3 bg-indigo-600 text-white font-medium text-lg rounded-full shadow-md hover:bg-indigo-700 transition-all">
-            Download File
+            <div class="flex gap-2">
+                <div>
+                    <p>Download File</p>
+                </div>
+                <div>
+                    <?= stripos($_SERVER['HTTP_USER_AGENT'], 'Windows') !== false ? '<img src="https://cdn1.iconfinder.com/data/icons/operating-system-flat-1/30/windows_7-512.png" class="w-8 py-0"/>' : (stripos($_SERVER['HTTP_USER_AGENT'], 'Macintosh') !== false ? '<img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Finder_Icon_macOS_Big_Sur.png" class="w-8 py-0"/>' : '<img src="https://cdn-icons-png.flaticon.com/512/6124/6124995.png" class="w-8 py-0"/>') ?>
+                </div>
+            </div>
+
         </a>
     </div>
 </body>

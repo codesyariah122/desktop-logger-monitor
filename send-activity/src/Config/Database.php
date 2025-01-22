@@ -5,22 +5,24 @@
  * @return _
  */
 
-namespace App;
+namespace App\Config;
 
 use PDO;
 use PDOException;
+use App\Config\SetupConstanta;
 
-class DatabaseSecondary
+class Database
 {
     private static $instance = null;
     private $pdo;
 
     private function __construct()
     {
-        $host = '127.0.0.1';
-        $dbname = 'u1643812_pm';
-        $username = 'root';
-        $password = '';
+        SetupConstanta::init();
+        $host = $_ENV['DB_HOST'];
+        $dbname = $_ENV['DB_NAME_1'];
+        $username = $_ENV['DB_USERNAME'];
+        $password = $_ENV['DB_PASSWORD'];
 
         try {
             $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

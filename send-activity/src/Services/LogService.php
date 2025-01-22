@@ -7,7 +7,7 @@
 
 namespace App\Services;
 
-use App\Database;
+use App\Config\{Database, DatabaseSecondary};
 use PDO;
 use PDOException;
 

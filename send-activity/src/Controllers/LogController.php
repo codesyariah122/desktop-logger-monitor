@@ -95,16 +95,55 @@ class LogController
     public function downloadFile()
     {
         try {
-            $filePath = __DIR__ . '/../storage/PMTokowebActivityUsage.exe';
-            $fileName = 'PMTokowebActivityUsage.exe';
+            // Ambil User-Agent dari perangkat klien
+            $userAgent = $_SERVER['HTTP_USER_AGENT'];
 
-            // var_dump($filePath);
-            // die;
+            // Deteksi sistem operasi berdasarkan User-Agent
+            if (stripos($userAgent, 'Windows') !== false) {
+                $filePath = __DIR__ . '/../storage/devices/windows/PMTokowebActivityUsage.exe';
+            } elseif (stripos($userAgent, 'Macintosh') !== false || stripos($userAgent, 'Mac OS X') !== false) {
+                header('Content-Type: text/html; charset=UTF-8');
+                http_response_code(200);
+                echo '
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                </head>
+                <body>
+                    <script>
+                        Swal.fire({
+                            title: "Informasi",
+                            text: "Untuk pengguna Mac OS X, aplikasi sedang dipersiapkan oleh administrator.",
+                            icon: "info",
+                            confirmButtonText: "Kembali"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.history.back();
+                            }
+                        });
+                    </script>
+                </body>
+                </html>
+            ';
+                exit;
+            } else {
+                http_response_code(400);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Unsupported operating system.',
+                    'user_agent' => $userAgent
+                ], JSON_PRETTY_PRINT);
+                exit;
+            }
 
+            // Lakukan proses download jika file ditemukan
             if (file_exists($filePath)) {
                 header('Content-Description: File Transfer');
                 header('Content-Type: application/octet-stream');
-                header('Content-Disposition: attachment; filename="' . basename($fileName) . '"');
+                header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
                 header('Expires: 0');
                 header('Cache-Control: must-revalidate');
                 header('Pragma: public');
@@ -122,6 +161,7 @@ class LogController
             echo $e->getMessage();
         }
     }
+
 
     public function showDownloadPage()
     {
