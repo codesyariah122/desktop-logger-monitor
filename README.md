@@ -1,5 +1,11 @@
 #### Python 3.10.9 compatibility
 
+- Insalling requirements
+
+```
+pip install -r requirements.txt
+```
+
 - Build
 
 **On Mac**
