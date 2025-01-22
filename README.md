@@ -53,3 +53,9 @@ _On Mac_
 ```
 python -m PyInstaller --noconsole --add-data "assets:assets" --add-data ".env:." --add-data "data:data" --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5 --no-codesign
 ```
+
+**Alternative**
+
+```
+xattr -dr com.apple.quarantine /Users/Nesya/Dropbox/Mac/Desktop/python-projects/desktop-logger-monitor-main/dist/activity-monitor
+```
