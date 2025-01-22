@@ -51,7 +51,7 @@ python -m PyInstaller --noconsole  --add-data "assets;assets" --add-data ".env;.
 _On Mac_
 
 ```
-python -m PyInstaller --noconsole --add-data "assets:assets" --add-data ".env:." --add-data "data:data" --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5 --osx-bundle-identifier com.example.activitymonitor
+python -m PyInstaller --onefile --noconsole --add-data "assets:assets" --add-data ".env:." --add-data "data:data" --hidden-import=requests --exclude PyQt5 activity-monitor.py
 ```
 
 **Alternative**
