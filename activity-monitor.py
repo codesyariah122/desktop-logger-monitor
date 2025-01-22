@@ -532,6 +532,8 @@ class ActivityMonitorApp(QWidget):
             self.app_table.setItem(row, 0, QTableWidgetItem(app))
             self.app_table.setItem(row, 1, QTableWidgetItem(f"{h}h {m}m {s}s"))
             time_item = QTableWidgetItem(f"{h}h {m}m {s}s")
+            # For mac 
+            # time_item.setTextAlignment(0x0004)
             time_item.setTextAlignment(Qt.AlignCenter)
             self.app_table.setItem(row, 1, time_item)
 
