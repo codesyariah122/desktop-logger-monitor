@@ -1,0 +1,14 @@
+AppKit==0.2.8
+Flask==3.1.0
+Flask_Cors==5.0.0
+keyboard==0.13.5
+Pillow==11.1.0
+PyAutoGUI==0.9.54
+PySide2==5.15.2.1
+PySide2==5.15.2.1
+python-dotenv==1.0.1
+python_bcrypt==0.3.2
+pywin32==308
+rembg==2.0.61
+Requests==2.32.3
+setuptools==65.5.0
