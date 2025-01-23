@@ -499,7 +499,6 @@ class ActivityMonitorApp(QWidget):
         
     def get_active_window_title_mac():
         try:
-            # Gunakan AppleScript untuk membaca judul tab di Google Chrome
             script = """
             tell application "System Events"
                 set activeApp to name of first application process whose frontmost is true
@@ -518,11 +517,19 @@ class ActivityMonitorApp(QWidget):
                 return activeApp
             end if
             """
-            result = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+            result = subprocess.run(
+                ["osascript", "-e", script],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode != 0:
+                print(f"Error in AppleScript execution: {result.stderr}")
+                return "Unknown"
             return result.stdout.strip()
         except Exception as e:
             print(f"Error getting active window title on macOS: {e}")
             return "Unknown"
+
         
     def get_active_window(self):
         """Dapatkan nama jendela aplikasi aktif"""
