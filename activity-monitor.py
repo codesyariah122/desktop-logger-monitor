@@ -152,6 +152,7 @@ class EmailDialog(QDialog):
         return {'status': 'invalid', 'message': 'Error during email check'}
 class ActivityMonitorApp(QWidget):
     def __init__(self):
+        pass
         super().__init__()
         self.setup_tray_icon()
         self.hide()  
@@ -497,7 +498,7 @@ class ActivityMonitorApp(QWidget):
     def on_mouse_move(self, x, y):
         self.total_mouse_events += 1
         
-    def get_active_window_title_mac():
+    def get_active_window_title_mac(self):
         try:
             script = """
             tell application "System Events"
