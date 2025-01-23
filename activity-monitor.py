@@ -2,6 +2,7 @@
 # @return package
 import os
 import io
+import subprocess
 import requests
 import time
 import json
@@ -495,7 +496,33 @@ class ActivityMonitorApp(QWidget):
 
     def on_mouse_move(self, x, y):
         self.total_mouse_events += 1
-
+    def get_active_window_title_mac():
+        try:
+            # Gunakan AppleScript untuk membaca judul tab di Google Chrome
+            script = """
+            tell application "System Events"
+                set activeApp to name of first application process whose frontmost is true
+            end tell
+            if activeApp is "Google Chrome" then
+                tell application "Google Chrome"
+                    set windowTitle to title of active tab of front window
+                    return windowTitle
+                end tell
+            else if activeApp is "Safari" then
+                tell application "Safari"
+                    set windowTitle to name of front document
+                    return windowTitle
+                end tell
+            else
+                return activeApp
+            end if
+            """
+            result = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+            return result.stdout.strip()
+        except Exception as e:
+            print(f"Error getting active window title on macOS: {e}")
+            return "Unknown"
+        
     def get_active_window(self):
         """Dapatkan nama jendela aplikasi aktif"""
         try:
@@ -508,8 +535,9 @@ class ActivityMonitorApp(QWidget):
                 output = subprocess.check_output(["xdotool", "getwindowfocus", "getwindowname"])
                 return output.decode("utf-8").strip()
             elif platform.system() == "Darwin":
-                from AppKit import NSWorkspace
-                return NSWorkspace.sharedWorkspace().activeApplication()["NSApplicationName"]
+                # from AppKit import NSWorkspace
+                # return NSWorkspace.sharedWorkspace().activeApplication()["NSApplicationName"]
+                return get_active_window_title_mac()
         except Exception as e:
             print(f"Error detecting active window: {e}")
         return "Unknown"
@@ -587,34 +615,6 @@ class ActivityMonitorApp(QWidget):
                 json.dump(data, json_file)
         except Exception as e:
             print(f"Error saving data to JSON: {e}")
-
-    def get_elapsed_time_ratio(self, total_work_seconds):
-        """Menghitung rasio waktu yang telah berlalu."""
-        elapsed_time = time.time() - self.start_time
-        return elapsed_time / total_work_seconds if total_work_seconds > 0 else 0
-    
-    def quit_application(self):
-        """Handle the quit action, send data before quitting."""
-        total_work_seconds = 3600
-        elapsed_time_ratio = self.get_elapsed_time_ratio(total_work_seconds)
-        self.send_data_to_db(total_work_seconds, elapsed_time_ratio)
-        
-        self.tray_icon.hide()
-        
-        QApplication.quit()
-        sys.exit() 
-    
-    def closeEvent(self, event):
-        """Override closeEvent to minimize the app to the system tray instead of exiting."""
-        event.ignore()
-        self.hide()
-        self.tray_icon.showMessage(
-            "Minimized to Tray",
-            "The application is still running in the system tray. Double-click the icon to restore it.",
-            QSystemTrayIcon.Information,
-            3000
-        )
-
     def send_data_to_db(self, total_work_seconds, elapsed_time_ratio):
         """Send data stored in JSON file to the database."""
         if os.path.exists(self.data_file):
@@ -642,7 +642,32 @@ class ActivityMonitorApp(QWidget):
                     print(f"Terjadi kesalahan saat mengirim data: {response.status_code}")
             except Exception as e:
                 print(f"Error saat mengirim data ke API: {e}")
-
+    def get_elapsed_time_ratio(self, total_work_seconds):
+        """Menghitung rasio waktu yang telah berlalu."""
+        elapsed_time = time.time() - self.start_time
+        return elapsed_time / total_work_seconds if total_work_seconds > 0 else 0
+    
+    def quit_application(self):
+        """Handle the quit action, send data before quitting."""
+        total_work_seconds = 3600
+        elapsed_time_ratio = self.get_elapsed_time_ratio(total_work_seconds)
+        self.send_data_to_db(total_work_seconds, elapsed_time_ratio)
+        
+        self.tray_icon.hide()
+        
+        QApplication.quit()
+        sys.exit() 
+    
+    def closeEvent(self, event):
+        """Override closeEvent to minimize the app to the system tray instead of exiting."""
+        event.ignore()
+        self.hide()
+        self.tray_icon.showMessage(
+            "Minimized to Tray",
+            "The application is still running in the system tray. Double-click the icon to restore it.",
+            QSystemTrayIcon.Information,
+            3000
+        )
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ActivityMonitorApp()
