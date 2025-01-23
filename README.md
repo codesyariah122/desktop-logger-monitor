@@ -70,7 +70,7 @@ python -m PyInstaller --hidden-import=pkg_resources._vendor.jaraco.functools \
 
 pyinstaller --onefile --windowed --noconsole --icon=assets/fav-1-1.png activity-monitor.py
 
-pyinstaller --exclude-module=winreg --exclude-module=nt --exclude-module=psutil --exclude-module=org --onefile --windowed --noconsole --icon=assets/fav-1-1.png activity-monitor.py
+pyinstaller --exclude-module=winreg --exclude-module=nt --exclude-module=psutil --exclude-module=cryptography --exclude-module=org --onefile --windowed --noconsole --icon=assets/fav-1-1.png activity-monitor.py
 
 codesign --sign "Developer ID Application: <Your Developer Name>" --timestamp --deep --force dist/activity-monitor.app
 ```
