@@ -57,6 +57,12 @@ python -m PyInstaller --noconsole --add-data "assets:assets" --add-data ".env:."
 _OR_
 
 ```
-python -m PyInstaller --noconsole --add-data "assets:assets" --add-data ".env:." --add-data "data:data" --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5
+python -m PyInstaller --hidden-import=pkg_resources._vendor.jaraco.functools \
+                      --hidden-import=pkg_resources._vendor.jaraco.context \
+                      --hidden-import=pkg_resources._vendor.jaraco.text \
+                      --hidden-import=shiboken2 \
+                      --noconsole --add-data "assets:assets" --add-data ".env:." --add-data "data:data" \
+                      --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5
+
 codesign --sign "Developer ID Application: <Your Developer Name>" --timestamp --deep --force dist/activity-monitor.app
 ```
