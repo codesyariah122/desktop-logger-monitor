@@ -51,6 +51,10 @@ python -m PyInstaller --noconsole  --add-data "assets;assets" --add-data ".env;.
 _On Mac_
 
 ```
+pip install numpy cryptography pyperclip pyautogui platformdirs requests ipython
+```
+
+```
 python -m PyInstaller --noconsole --add-data "assets:assets" --add-data ".env:." --add-data "data:data" --hidden-import=requests --onefile activity-monitor.py --exclude PyQt5 --osx-bundle-identifier com.yourcompany.activitymonitor
 ```
 
