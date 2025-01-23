@@ -496,6 +496,7 @@ class ActivityMonitorApp(QWidget):
 
     def on_mouse_move(self, x, y):
         self.total_mouse_events += 1
+        
     def get_active_window_title_mac():
         try:
             # Gunakan AppleScript untuk membaca judul tab di Google Chrome
