@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>Background Remover</h1>
+    <input type="file" id="fileInput" accept="image/*" />
+    <button id="uploadButton">Remove Background</button>
+    <img id="resultImage" style="display: none; max-width: 100%;" />
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const resultImage = document.getElementById('resultImage');
+
+        uploadButton.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please upload an image');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('https://rbg-mindsparks.hallaw.com/remove-background', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.image) {
+                    resultImage.src = `data:image/png;base64,${data.image}`;
+                    resultImage.style.display = 'block';
+                } else {
+                    alert('Failed to process the image');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+
+</html>

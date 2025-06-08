@@ -1,0 +1,12 @@
+{
+  "name": "Background Remover",
+  "id": "1462072136940415901",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["https://rbg-mindsparks.hallaw.com/remove-background"]
+  },
+  "documentAccess": "dynamic-page"
+}
