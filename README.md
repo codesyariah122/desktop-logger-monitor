@@ -1,5 +1,5 @@
 # Preview
-![ezyZip-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/7532bc9f-745a-488c-92f6-b364832d03a1)
+[![Watch the video](https://img.youtube.com/vi/HyQbqRQ3CRQ/maxresdefault.jpg)](https://youtu.be/HyQbqRQ3CRQ)
 
 
 
@@ -82,3 +82,5 @@ pyinstaller --exclude-module=winreg --exclude-module=nt --exclude-module=psutil 
 
 codesign --sign "Developer ID Application: <Your Developer Name>" --timestamp --deep --force dist/activity-monitor.app
 ```
+
+coff.ee/codesyariah122
