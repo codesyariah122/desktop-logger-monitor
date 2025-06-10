@@ -1,4 +1,7 @@
-#### Python 3.10.9 compatibility
+# Preview
+https://github.com/user-attachments/assets/9babc7b4-5912-4b82-8df4-f3939f57c6f1
+
+### Python 3.10.9 compatibility
 
 - Insalling requirements
 
