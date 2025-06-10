@@ -1,5 +1,7 @@
 # Preview
-https://github.com/user-attachments/assets/9babc7b4-5912-4b82-8df4-f3939f57c6f1
+![ezyZip-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/7532bc9f-745a-488c-92f6-b364832d03a1)
+
+
 
 ### Python 3.10.9 compatibility
 
