@@ -83,4 +83,4 @@ pyinstaller --exclude-module=winreg --exclude-module=nt --exclude-module=psutil 
 codesign --sign "Developer ID Application: <Your Developer Name>" --timestamp --deep --force dist/activity-monitor.app
 ```
 
-coff.ee/codesyariah122
+[![Buy Me Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/codesyariah122)
