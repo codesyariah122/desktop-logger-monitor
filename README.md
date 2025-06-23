@@ -1,4 +1,5 @@
-# Preview
+# Preview  
+Check on this video here : 
 [![Watch the video](https://img.youtube.com/vi/HyQbqRQ3CRQ/maxresdefault.jpg)](https://youtu.be/HyQbqRQ3CRQ)
 
 Proyek ini adalah aplikasi pemantauan aktivitas yang ditulis dalam Python menggunakan PySide2 untuk antarmuka pengguna grafis (GUI). Aplikasi ini dirancang untuk memantau penggunaan aplikasi, aktivitas keyboard, dan mouse, serta mengumpulkan data pengguna berdasarkan email yang dimasukkan.
