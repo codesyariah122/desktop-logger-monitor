@@ -1,4 +1,10 @@
 #### Python 3.10.9 compatibility
+<img width="502" height="366" alt="Screenshot 2025-10-17 130231" src="https://github.com/user-attachments/assets/6454f584-a5f8-418d-b099-b47cf4d2b3c3" />
+<img width="1917" height="1018" alt="Screenshot 2025-10-17 130245" src="https://github.com/user-attachments/assets/472a50ee-ba5a-4896-a838-8874b26e130a" />
+
+
+Uploading preview-desktop-logger-monitor.mp4…
+
 
 - Insalling requirements
 
