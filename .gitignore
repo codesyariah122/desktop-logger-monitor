@@ -9,3 +9,4 @@ tools/Output/
 *.pyc
 dist/
 build/
+send-activity/u1643812_pm.sql
