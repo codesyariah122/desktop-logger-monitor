@@ -1,0 +1,11 @@
+dist/
+build/
+*.spec
+send-activity/vendor/
+venv/
+tools/Output/
+.env
+*.exe
+*.pyc
+dist/
+build/

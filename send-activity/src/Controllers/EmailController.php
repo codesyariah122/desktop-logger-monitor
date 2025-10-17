@@ -51,7 +51,8 @@ class EmailController
         $email = $_GET['email'] ?? null;
         if ($email) {
             $userData = $this->emailService->getUserDataByEmail($email);
-
+            // var_dump($userData);
+            // die;
             if ($userData) {
                 $attendanceData = $this->emailService->getAttendanceDataByUserId($userData['id']);
 

@@ -13,15 +13,15 @@ import pyautogui
 import keyboard
 from dotenv import load_dotenv
 from pathlib import Path
-from PySide2.QtGui import (QIcon, QPixmap)
-from PySide2.QtCore import (QTimer, QTime, QEvent)
-from PySide2.QtWidgets import (
+from PySide6.QtGui import (QIcon, QPixmap, QAction)
+from PySide6.QtCore import (QTimer, QTime, QEvent, Qt, QDateTime)
+from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
     QTableWidget, QTableWidgetItem, QLineEdit,
-    QPushButton, QDialog, QMenu, QAction, QSystemTrayIcon, QHBoxLayout, QMessageBox
+    QPushButton, QDialog, QMenu, QSystemTrayIcon, QHBoxLayout, QMessageBox
 )
 
-from PySide2.QtCore import (Qt, QDateTime)
+from PySide6.QtCore import (Qt, QDateTime)
 # from pynput import keyboard, mouse
 from threading import Thread
 from datetime import datetime
@@ -156,7 +156,9 @@ class EmailDialog(QDialog):
             response = requests.get(f'{api_url}/check-email?email={email}')
             if response.status_code == 200:
                 response_data = response.json()
-                if response_data.get('status') == True:
+                print("API Response:", response_data)  # <— debug penting
+                status = str(response_data.get('status')).lower()
+                if status in ['1', 'true', 'valid', 'success']:
                     return {'status': 'valid'}
                 else:
                     return {'status': 'invalid', 'message': response_data.get('message', 'Email is invalid')}
@@ -165,6 +167,7 @@ class EmailDialog(QDialog):
         except Exception as e:
             print(f"Error during email check: {e}")
         return {'status': 'invalid', 'message': 'Error during email check'}
+
 class ActivityMonitorApp(QWidget):
     def __init__(self):
         pass
@@ -256,7 +259,24 @@ class ActivityMonitorApp(QWidget):
 
         self.app_table = QTableWidget(0, 2)
         self.app_table.setHorizontalHeaderLabels(["Application 📝", "Usage Time 🕢"])
-        self.app_table.setStyleSheet("background-color: #f7f7f7; border: 1px solid #ccc;")
+        self.app_table.setStyleSheet("""
+            QTableWidget {
+                background-color: #1e1e1e;
+                color: #fff;
+                border: 1px solid #444;
+                gridline-color: #444;
+                selection-background-color: #2563eb;
+                selection-color: #fff;
+            }
+            QHeaderView::section {
+                background-color: #333;
+                color: #fff;
+                font-weight: bold;
+                border: 1px solid #444;
+                padding: 4px;
+            }
+        """)
+
         self.app_table.setColumnWidth(0, 600)
         self.app_table.setColumnWidth(1, 50)
         self.app_table.horizontalHeader().setStretchLastSection(True)
