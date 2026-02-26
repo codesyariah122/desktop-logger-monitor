@@ -1,13 +1,6 @@
 # @author Puji Ermanto <pujiermanto@gmail>
 # @return package
 import os
-os.environ["QT_QUICK_BACKEND"] = "software"
-os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu"
-os.environ["QT_MAC_WANTS_LAYER"] = "1"
-os.environ["QT_QPA_PLATFORM"] = "cocoa"
-os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
-import traceback
-import faulthandler
 from pathlib import Path
 import io
 import subprocess
@@ -19,6 +12,7 @@ import platform
 import pyautogui
 import keyboard
 from dotenv import load_dotenv
+from pathlib import Path
 from PySide6.QtGui import (QIcon, QPixmap, QAction)
 from PySide6.QtCore import (QTimer, QTime, QEvent, Qt, QDateTime)
 from PySide6.QtWidgets import (
@@ -26,10 +20,14 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QLineEdit,
     QPushButton, QDialog, QMenu, QSystemTrayIcon, QHBoxLayout, QMessageBox
 )
+
+from PySide6.QtCore import (Qt, QDateTime)
+# from pynput import keyboard, mouse
 from threading import Thread
 from datetime import datetime
 
-# ✅ gunakan resource_path untuk membaca file dari bundle
+# load_dotenv()
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -37,16 +35,22 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# ✅ load .env dari lokasi bundle
-dotenv_path = resource_path(".env")
-load_dotenv(dotenv_path, override=True)
+load_dotenv(override=True)
+# load_dotenv(resource_path('.env'))
 
-# ✅ cek nilai env yang terbaca
-api_url = os.getenv("API_URL")
-web_url = os.getenv("WEB_URL")
+api_url=os.getenv('API_URL')
+web_url=os.getenv('WEB_URL')
 
 print(">>> AFTER .env - API_URL =", api_url)
 print("WEB_URL =", web_url)
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+assets_path = resource_path("assets")
+data_path = resource_path("data")
 
 class EmailDialog(QDialog):
     def __init__(self, activity_monitor_app, parent=None):
@@ -166,6 +170,7 @@ class EmailDialog(QDialog):
 
 class ActivityMonitorApp(QWidget):
     def __init__(self):
+        pass
         super().__init__()
         self.setup_tray_icon()
         self.hide()  
@@ -354,16 +359,17 @@ class ActivityMonitorApp(QWidget):
         except Exception as e:
             print(f"Error fetching location: {e}")
 
+
+
     def get_user_data_from_api(self, email):
         """Get user data from API using the provided email."""
         try:
             user_email_to_use = self.user_email if self.user_email else email
-            response = requests.get(f'{api_url.rstrip("/")}/user-data?email={user_email_to_use}')
+            response = requests.get(f'{api_url}/user-data?email={user_email_to_use}')
             if response.status_code == 200:
-                user_data = response.json()
-                # ⬇️ Jalankan display_user_data di main thread secara aman
-                QTimer.singleShot(0, lambda d=user_data: self.display_user_data(d))
-                return user_data
+                user_data = response.json()             
+                self.display_user_data(user_data)
+                return user_data 
             else:
                 print(f"Error fetching user data: {response.status_code}")
         except Exception as e:
@@ -377,9 +383,9 @@ class ActivityMonitorApp(QWidget):
             print("User info is missing from the API response.")
             return
         
-        # Hindari duplikasi widget
+        # Avoid adding the same widgets multiple times
         if hasattr(self, 'clock_in_label'):
-            self.clock_in_label.deleteLater()
+            self.clock_in_label.deleteLater()  # Remove existing widget if exists
         if hasattr(self, 'user_name_label'):
             self.user_name_label.deleteLater()
         if hasattr(self, 'user_image_label'):
@@ -407,36 +413,38 @@ class ActivityMonitorApp(QWidget):
         self.user_name_label.setStyleSheet("font-size: 14px; margin-top: 10px;")
         user_layout = QHBoxLayout()
         self.layout().addLayout(user_layout)
-        
+
         image_path = user_info.get('image')
         if image_path:
             try:
-                image_url = f'{web_url.rstrip("/")}/files/profile_images/{image_path}'
+                image_url = f'{web_url}/files/profile_images/{image_path}'
                 print(f"Trying to load image from: {image_url}")
-
+                
                 response = requests.get(image_url)
                 if response.status_code == 200:
-                    # ⬇️ gunakan QImage langsung, tanpa QPixmap intermediate
-                    image_data = response.content
-                    image = QImage.fromData(image_data)
-                    if not image.isNull():
+                    image_data = io.BytesIO(response.content)
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(image_data.read())
+                    
+                    if not pixmap.isNull():
                         self.user_image_label = QLabel(self)
-                        # konversi ke pixmap hanya di tahap akhir
-                        safe_pixmap = QPixmap(image)
-                        self.user_image_label.setPixmap(safe_pixmap)
+                        self.user_image_label.setPixmap(pixmap)
                         self.user_image_label.setScaledContents(True)
                         self.user_image_label.setFixedSize(70, 70)
+                        # user_layout.addWidget(self.user_image_label)
                         self.user_image_label.setStyleSheet("""
                             border-radius: 100%;
                             border: 2px solid #ddd;
                         """)
                         self.user_image_label.setAlignment(Qt.AlignCenter)
                         user_layout.addWidget(self.user_image_label)
+
+                        # Add hover effect using event filter
                         self.user_image_label.installEventFilter(self)
                     else:
-                        print("⚠️ Failed to decode QImage from data")
+                        print(f"Failed to load image from response.")
                 else:
-                    print(f"⚠️ Failed to download image, status: {response.status_code}")
+                    print(f"Failed to download image, status code: {response.status_code}")
             except Exception as e:
                 print(f"Error loading image: {e}")
         else:
@@ -501,8 +509,8 @@ class ActivityMonitorApp(QWidget):
             print(f"Error loading email from file: {e}")
 
     def start_tracking(self):
-        # keyboard_thread = Thread(target=self.monitor_keyboard_events)
-        # keyboard_thread.start()
+        keyboard_thread = Thread(target=self.monitor_keyboard_events)
+        keyboard_thread.start()
         mouse_thread = Thread(target=self.monitor_mouse_events)
         mouse_thread.start()
 
@@ -705,21 +713,7 @@ class ActivityMonitorApp(QWidget):
             QSystemTrayIcon.Information,
             3000
         )
-        
-def handle_exception(exc_type, exc_value, exc_traceback):
-    """Log semua exception ke file error.log"""
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-    with open("error.log", "a") as f:
-        f.write("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-        f.write("\n" + "="*80 + "\n")
-    print("⚠️ Uncaught exception logged to error.log")
-
-sys.excepthook = handle_exception
-
 if __name__ == "__main__":
-    faulthandler.enable()
     app = QApplication(sys.argv)
     window = ActivityMonitorApp()
     window.show()

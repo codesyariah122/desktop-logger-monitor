@@ -147,6 +147,29 @@ pip install -r requirements.txt
 Write-Host "`n=== Done! Virtual environment ready. ==="
 ```
 
+#### Run On Mac testing
+```
+QT_MAC_WANTS_LAYER=1 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software QT_OPENGL=software python activity-monitor.py
+``` 
+
+##### Format Icons PNG to ICNS
+```
+magick convert assets/fav-1-1.png assets/fav-1-1.icns
+```
+
+#### Build on Mac
+```
+pyinstaller --name "ActivityMonitorPM" \
+  --windowed \
+  --noconfirm \
+  --onedir \
+  --icon assets/fav-1-1.icns \
+  --add-data "assets:assets" \
+  --add-data "data:data" \
+  --add-data ".env:." \
+  activity-monitor.py
+```
+
 Lalu jalankan:
 ```
 .\reset_venv.ps1
