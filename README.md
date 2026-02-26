@@ -170,6 +170,12 @@ pyinstaller --name "ActivityMonitorPM" \
   activity-monitor.py
 ```
 
+##### If cannot open apps
+open spotlight open terminal : 
+```
+xattr -rd com.apple.quarantine "/Applications/ActivityMonitorPM.app"
+```
+
 Lalu jalankan:
 ```
 .\reset_venv.ps1
