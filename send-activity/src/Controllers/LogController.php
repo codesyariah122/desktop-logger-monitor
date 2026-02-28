@@ -102,34 +102,34 @@ class LogController
             if (stripos($userAgent, 'Windows') !== false) {
                 $filePath = __DIR__ . '/../storage/devices/windows/PMTokowebActivityUsage.exe';
             } elseif (stripos($userAgent, 'Macintosh') !== false || stripos($userAgent, 'Mac OS X') !== false) {
-            //     header('Content-Type: text/html; charset=UTF-8');
-            //     http_response_code(200);
-            //     echo '
-            //     <!DOCTYPE html>
-            //     <html lang="en">
-            //     <head>
-            //         <meta charset="UTF-8">
-            //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            //         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-            //     </head>
-            //     <body>
-            //         <script>
-            //             Swal.fire({
-            //                 title: "Informasi",
-            //                 text: "Untuk pengguna Mac OS X, aplikasi sedang dipersiapkan oleh administrator.",
-            //                 icon: "info",
-            //                 confirmButtonText: "Kembali"
-            //             }).then((result) => {
-            //                 if (result.isConfirmed) {
-            //                     window.history.back();
-            //                 }
-            //             });
-            //         </script>
-            //     </body>
-            //     </html>
-            // ';
-            //     exit;
-            $filePath = __DIR__ . '/../storage/devices/mac/ActivityMonitorPM.zip';
+                //     header('Content-Type: text/html; charset=UTF-8');
+                //     http_response_code(200);
+                //     echo '
+                //     <!DOCTYPE html>
+                //     <html lang="en">
+                //     <head>
+                //         <meta charset="UTF-8">
+                //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                //         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                //     </head>
+                //     <body>
+                //         <script>
+                //             Swal.fire({
+                //                 title: "Informasi",
+                //                 text: "Untuk pengguna Mac OS X, aplikasi sedang dipersiapkan oleh administrator.",
+                //                 icon: "info",
+                //                 confirmButtonText: "Kembali"
+                //             }).then((result) => {
+                //                 if (result.isConfirmed) {
+                //                     window.history.back();
+                //                 }
+                //             });
+                //         </script>
+                //     </body>
+                //     </html>
+                // ';
+                //     exit;
+                $filePath = __DIR__ . '/../storage/devices/mac/ActivityMonitorPM.zip';
             } else {
                 http_response_code(400);
                 echo json_encode([
@@ -162,33 +162,33 @@ class LogController
             echo $e->getMessage();
         }
     }
-    
+
     public function recordDownloadClick()
     {
         $filePath = __DIR__ . '/../storage/download_count.txt';
-    
+
         // Buat file jika belum ada
         if (!file_exists($filePath)) {
             file_put_contents($filePath, 0);
         }
-    
+
         // Tambah 1 klik
         $count = (int) file_get_contents($filePath);
         $count++;
         file_put_contents($filePath, $count);
-    
+
         header('Content-Type: application/json');
         echo json_encode([
             'status' => 'success',
             'total_downloads' => $count
         ]);
     }
-    
+
     public function getDownloadStats()
     {
         $filePath = __DIR__ . '/../storage/download_count.txt';
         $count = file_exists($filePath) ? (int) file_get_contents($filePath) : 0;
-    
+
         header('Content-Type: application/json');
         echo json_encode([
             'status' => 'success',
@@ -207,6 +207,19 @@ class LogController
                 'status' => 'error',
                 'message' => 'View not found.'
             ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    public function show404Page()
+    {
+        http_response_code(404);
+        header('Content-Type: text/html; charset=UTF-8'); // ⬅️ penting!
+
+        $viewPath = __DIR__ . '/../Views/404.php';
+        if (file_exists($viewPath)) {
+            include $viewPath;
+        } else {
+            echo '<h1 style="font-family: sans-serif; text-align:center; margin-top:20%;">404 - Page Not Found</h1>';
         }
     }
 }

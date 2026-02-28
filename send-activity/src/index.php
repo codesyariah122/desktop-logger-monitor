@@ -20,7 +20,7 @@ class AgoGoConnect
             $logController->showDownloadPage();
         } else {
             $header::runHeader('api');
-            
+
             // === Tambahan Statistik Download ===
             if (strpos($requestUri, '/api/record-download') !== false) {
                 $logController->recordDownloadClick();
@@ -37,11 +37,7 @@ class AgoGoConnect
             } else if (strpos($requestUri, '/download-file') !== false) {
                 $logController->downloadFile();
             } else {
-                http_response_code(404);
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'Not Found'
-                ], JSON_PRETTY_PRINT);
+                $logController->show404Page();
             }
         }
     }
