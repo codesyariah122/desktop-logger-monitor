@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @author Puji Ermanto <pujiermanto@gmail.com>
- * @return generic
- */
-
 namespace App\Server;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -25,7 +20,13 @@ class AgoGoConnect
             $logController->showDownloadPage();
         } else {
             $header::runHeader('api');
-            if (strpos($requestUri, '/api/check-email') !== false) {
+            
+            // === Tambahan Statistik Download ===
+            if (strpos($requestUri, '/api/record-download') !== false) {
+                $logController->recordDownloadClick();
+            } else if (strpos($requestUri, '/api/download-stats') !== false) {
+                $logController->getDownloadStats();
+            } else if (strpos($requestUri, '/api/check-email') !== false) {
                 $emailController->checkEmail();
             } else if (strpos($requestUri, '/api/logs') !== false) {
                 $logController->handleRequest();
