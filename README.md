@@ -180,3 +180,9 @@ Lalu jalankan:
 ```
 .\reset_venv.ps1
 ```  
+
+#### Root env
+```
+API_URL=https://pm-activity.tokoweb.live/api
+WEB_URL=https://pm.tokoweb.live/
+```
